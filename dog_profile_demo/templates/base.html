@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dog Profile Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body>
+    <header>
+      <a class="title" href="{{ url_for('index') }}">Dog Profile Demo</a>
+      <nav>
+        <a class="btn" href="{{ url_for('index') }}">All Dogs</a>
+        <a class="btn primary" href="{{ url_for('create') }}">+ New Dog</a>
+      </nav>
+    </header>
+    <div class="container">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <ul>
+            {% for m in messages %}<li>{{ m }}</li>{% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </div>
+    <footer>Demo app for class — Flask + SQLite</footer>
+  </body>
+</html>

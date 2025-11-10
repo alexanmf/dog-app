@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ 'Edit Dog' if dog else 'New Dog' }}</h2>
+<form method="post">
+  <div class="row">
+    <div>
+      <label>Name</label>
+      <input name="name" required value="{{ dog.name if dog else '' }}">
+    </div>
+    <div>
+      <label>Age (years)</label>
+      <input type="number" min="0" name="age" value="{{ dog.age if dog else 0 }}">
+    </div>
+    <div>
+      <label>Size</label>
+      <select name="size">
+        {% for s in ["Small","Medium","Large"] %}
+          <option value="{{s}}" {% if dog and dog.size==s %}selected{% endif %}>{{s}}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Status</label>
+      <select name="status">
+        {% for s in ["Intake","Fostered","Hold","Adopted","Transferred"] %}
+          <option value="{{s}}" {% if dog and dog.status==s %}selected{% endif %}>{{s}}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <div class="row">
+    <div>
+      <label><input type="checkbox" name="kid_friendly" {% if dog and dog.kid_friendly %}checked{% endif %}> Kid friendly</label>
+    </div>
+    <div>
+      <label><input type="checkbox" name="cat_friendly" {% if dog and dog.cat_friendly %}checked{% endif %}> Cat friendly</label>
+    </div>
+    <div>
+      <label><input type="checkbox" name="dog_friendly" {% if dog and dog.dog_friendly %}checked{% endif %}> Dog friendly</label>
+    </div>
+  </div>
+  <div class="row full">
+    <div>
+      <label>Notes</label>
+      <textarea name="notes" rows="6">{{ dog.notes if dog else '' }}</textarea>
+    </div>
+  </div>
+  <p>
+    <button class="btn primary" type="submit">Save</button>
+    <a class="btn" href="{{ url_for('index') }}">Cancel</a>
+  </p>
+</form>
+{% endblock %}
