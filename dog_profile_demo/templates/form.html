@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>{{ 'Edit Dog' if dog else 'New Dog' }}</h2>
-<form method="post">
+<form method="post" enctype="multipart/form-data">
   <div class="row">
     <div>
       <label>Name</label>
@@ -28,6 +28,7 @@
       </select>
     </div>
   </div>
+
   <div class="row">
     <div>
       <label><input type="checkbox" name="kid_friendly" {% if dog and dog.kid_friendly %}checked{% endif %}> Kid friendly</label>
@@ -39,15 +40,27 @@
       <label><input type="checkbox" name="dog_friendly" {% if dog and dog.dog_friendly %}checked{% endif %}> Dog friendly</label>
     </div>
   </div>
+
   <div class="row full">
     <div>
       <label>Notes</label>
       <textarea name="notes" rows="6">{{ dog.notes if dog else '' }}</textarea>
     </div>
   </div>
+
+  <!-- ⭐ Add your photo upload field here -->
+  <div class="row full">
+    <div>
+      <label>Photo</label>
+      <input type="file" name="image" accept="image/*">
+    </div>
+  </div>
+
   <p>
     <button class="btn primary" type="submit">Save</button>
     <a class="btn" href="{{ url_for('index') }}">Cancel</a>
   </p>
+
 </form>
+
 {% endblock %}
