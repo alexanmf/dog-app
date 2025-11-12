@@ -144,4 +144,58 @@ def edit(dog_id):
                 1 if form.get("dog_friendly") else 0,
                 form.get("notes", ""),
                 image_url,
-                d
+                db.execute(
+            "UPDATE dogs SET name=?, age=?, size=?, status=?, kid_friendly=?, cat_friendly=?, dog_friendly=?, notes=?, image_url=? "
+            "WHERE id=?",
+            (
+                form.get("name"),
+                int(form.get("age", 0) or 0),
+                form.get("size", "Medium"),
+                form.get("status", "Intake"),
+                1 if form.get("kid_friendly") else 0,
+                1 if form.get("cat_friendly") else 0,
+                1 if form.get("dog_friendly") else 0,
+                form.get("notes", ""),
+                image_url,
+                dog_id,            # ← this was truncated before
+            ),
+        )
+        db.execute(
+            "UPDATE dogs SET name=?, age=?, size=?, status=?, kid_friendly=?, cat_friendly=?, dog_friendly=?, notes=?, image_url=? "
+            "WHERE id=?",
+            (
+                form.get("name"),
+                int(form.get("age", 0) or 0),
+                form.get("size", "Medium"),
+                form.get("status", "Intake"),
+                1 if form.get("kid_friendly") else 0,
+                1 if form.get("cat_friendly") else 0,
+                1 if form.get("dog_friendly") else 0,
+                form.get("notes", ""),
+                image_url,
+                dog_id,            # ← this was truncated before
+            ),
+        )
+        db.commit()
+        flash("Dog updated.")
+        return redirect(url_for("index"))
+
+    # Convert Row to simple object with attrs for template convenience
+    class Obj:
+        pass
+    o = Obj()
+    for k in dog.keys():
+        setattr(o, k, dog[k])
+    return render_template("form.html", dog=o)
+
+@app.route("/delete/<int:dog_id>")
+def delete(dog_id):
+    db = get_db()
+    db.execute("DELETE FROM dogs WHERE id=?", (dog_id,))
+    db.commit()
+    flash("Dog deleted.")
+    return redirect(url_for("index"))
+
+if __name__ == "__main__":
+    app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # optional 5MB cap
+    app.run(debug=True)
