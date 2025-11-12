@@ -1,8 +1,45 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from db import get_db, close_db
 
+# NEW: imports for uploads
+import os
+from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
+import cloudinary
+import cloudinary.uploader
+
 app = Flask(__name__)
 app.secret_key = "dev-secret"  # for flash()
+
+# Load env (local) and configure Cloudinary (uses CLOUDINARY_URL)
+load_dotenv()
+cloudinary.config(secure=True)
+
+# Allowed image types
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+
+def allowed_file(filename: str) -> bool:
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def upload_to_cloudinary(file_storage):
+    """
+    Uploads the given Werkzeug FileStorage to Cloudinary.
+    Returns secure URL (str) or None on failure.
+    """
+    if not file_storage or not file_storage.filename:
+        return None
+    filename = secure_filename(file_storage.filename)
+    if not allowed_file(filename):
+        return None
+    # You can change the folder name if you want
+    result = cloudinary.uploader.upload(
+        file_storage,
+        folder="dog_app",
+        use_filename=True,
+        unique_filename=False,
+        overwrite=False,
+    )
+    return result.get("secure_url")
 
 @app.teardown_appcontext
 def teardown_db(exception):
@@ -35,8 +72,23 @@ def create():
     if request.method == "POST":
         db = get_db()
         form = request.form
+
+        # NEW: handle optional image upload
+        image_url = None
+        file = request.files.get("image")
+        if file and file.filename:
+            if not allowed_file(file.filename):
+                flash("Invalid image type. Use png/jpg/jpeg/gif/webp.")
+            else:
+                try:
+                    image_url = upload_to_cloudinary(file)
+                except Exception:
+                    image_url = None
+                    flash("Image upload failed.")
+
         db.execute(
-            "INSERT INTO dogs (name, age, size, status, kid_friendly, cat_friendly, dog_friendly, notes) VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO dogs (name, age, size, status, kid_friendly, cat_friendly, dog_friendly, notes, image_url) "
+            "VALUES (?,?,?,?,?,?,?,?,?)",
             (
                 form.get("name"),
                 int(form.get("age", 0) or 0),
@@ -46,6 +98,7 @@ def create():
                 1 if form.get("cat_friendly") else 0,
                 1 if form.get("dog_friendly") else 0,
                 form.get("notes", ""),
+                image_url,
             ),
         )
         db.commit()
@@ -60,10 +113,27 @@ def edit(dog_id):
     if not dog:
         flash("Dog not found.")
         return redirect(url_for("index"))
+
     if request.method == "POST":
         form = request.form
+
+        # Keep existing URL unless a new image is uploaded
+        image_url = dog["image_url"]
+        file = request.files.get("image")
+        if file and file.filename:
+            if not allowed_file(file.filename):
+                flash("Invalid image type. Use png/jpg/jpeg/gif/webp.")
+            else:
+                try:
+                    new_url = upload_to_cloudinary(file)
+                    if new_url:
+                        image_url = new_url
+                except Exception:
+                    flash("Image upload failed; keeping previous image.")
+
         db.execute(
-            "UPDATE dogs SET name=?, age=?, size=?, status=?, kid_friendly=?, cat_friendly=?, dog_friendly=?, notes=? WHERE id=?",
+            "UPDATE dogs SET name=?, age=?, size=?, status=?, kid_friendly=?, cat_friendly=?, dog_friendly=?, notes=?, image_url=? "
+            "WHERE id=?",
             (
                 form.get("name"),
                 int(form.get("age", 0) or 0),
@@ -73,26 +143,5 @@ def edit(dog_id):
                 1 if form.get("cat_friendly") else 0,
                 1 if form.get("dog_friendly") else 0,
                 form.get("notes", ""),
-                dog_id,
-            ),
-        )
-        db.commit()
-        flash("Dog updated.")
-        return redirect(url_for("index"))
-    # Convert Row to simple object with attrs for template convenience
-    class Obj: pass
-    o = Obj()
-    for k in dog.keys():
-        setattr(o, k, dog[k])
-    return render_template("form.html", dog=o)
-
-@app.route("/delete/<int:dog_id>")
-def delete(dog_id):
-    db = get_db()
-    db.execute("DELETE FROM dogs WHERE id=?", (dog_id,))
-    db.commit()
-    flash("Dog deleted.")
-    return redirect(url_for("index"))
-
-if __name__ == "__main__":
-    app.run(debug=True)
+                image_url,
+                d
