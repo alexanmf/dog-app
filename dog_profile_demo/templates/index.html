@@ -1,26 +1,7 @@
-{% extends "base.html" %}
-{% block content %}
-<h2>Dogs</h2>
-<form method="get" class="filters">
-  <input type="text" name="q" placeholder="Search name or notes..." value="{{ request.args.get('q','') }}">
-  <select name="status">
-    <option value="">Any status</option>
-    {% for s in ["Intake","Fostered","Hold","Adopted","Transferred"] %}
-      <option value="{{s}}" {% if request.args.get('status')==s %}selected{% endif %}>{{s}}</option>
-    {% endfor %}
-  </select>
-  <select name="size">
-    <option value="">Any size</option>
-    {% for s in ["Small","Medium","Large"] %}
-      <option value="{{s}}" {% if request.args.get('size')==s %}selected{% endif %}>{{s}}</option>
-    {% endfor %}
-  </select>
-  <button class="btn" type="submit">Filter</button>
-</form>
-
 <table>
   <thead>
     <tr>
+      <th>Photo</th>
       <th>Name</th>
       <th>Age</th>
       <th>Size</th>
@@ -32,6 +13,13 @@
   <tbody>
     {% for d in dogs %}
     <tr>
+      <td>
+        {% if d['image_url'] %}
+          <img src="{{ d['image_url'] }}" alt="{{ d['name'] }}" style="max-height:80px; border-radius:8px;">
+        {% else %}
+          <img src="{{ url_for('static', filename='no-image.png') }}" alt="" style="max-height:80px; opacity:.6;">
+        {% endif %}
+      </td>
       <td>{{ d['name'] }}</td>
       <td>{{ d['age'] }}</td>
       <td>{{ d['size'] }}</td>
@@ -49,5 +37,3 @@
     {% endfor %}
   </tbody>
 </table>
-{% if not dogs %}<p>No dogs match your filters.</p>{% endif %}
-{% endblock %}
