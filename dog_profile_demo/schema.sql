@@ -9,5 +9,6 @@ CREATE TABLE dogs (
   kid_friendly INTEGER NOT NULL DEFAULT 0,
   cat_friendly INTEGER NOT NULL DEFAULT 0,
   dog_friendly INTEGER NOT NULL DEFAULT 0,
-  notes TEXT
+  notes TEXT,
+  image_url TEXT    -- ✅ Added column to store Cloudinary image links
 );
