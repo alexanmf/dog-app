@@ -41,20 +41,24 @@ def upload_to_cloudinary(file_storage):
     return result.get("secure_url")
 
 
-# --- DB lifecycle ---
 @app.teardown_appcontext
 def teardown_db(exception):
     close_db()
 
 
-# Ensure the image_url column exists even if the DB was created earlier
-@app.before_first_request
-def ensure_schema():
+# ---- One-time schema check (Flask 3+: use before_request + flag) ----
+app.config.setdefault("SCHEMA_CHECKED", False)
+
+@app.before_request
+def ensure_schema_once():
+    if app.config["SCHEMA_CHECKED"]:
+        return
     db = get_db()
     cols = [row["name"] for row in db.execute("PRAGMA table_info(dogs)").fetchall()]
     if "image_url" not in cols:
         db.execute("ALTER TABLE dogs ADD COLUMN image_url TEXT")
         db.commit()
+    app.config["SCHEMA_CHECKED"] = True
 
 
 # --- Routes ---
@@ -177,7 +181,6 @@ def edit(dog_id):
     # Convert Row to simple object with attrs for template convenience
     class Obj:
         pass
-
     o = Obj()
     for k in dog.keys():
         setattr(o, k, dog[k])
@@ -195,5 +198,8 @@ def delete(dog_id):
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+
+
 
 
