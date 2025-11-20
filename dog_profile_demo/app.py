@@ -1,11 +1,9 @@
+import os
+import time
 from flask import Flask, render_template, request, redirect, url_for, flash
-from db import get_db, close_db
-
-# --- Uploads / Cloudinary ---
 from werkzeug.utils import secure_filename
-from dotenv import load_dotenv
-import cloudinary
-import cloudinary.uploader
+
+from db import get_db, close_db
 
 app = Flask(__name__)
 app.secret_key = "dev-secret"  # for flash()
@@ -13,41 +11,49 @@ app.secret_key = "dev-secret"  # for flash()
 # Optional: cap upload size (5 MB)
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 
-# Load env locally and configure Cloudinary (uses CLOUDINARY_URL)
-load_dotenv()
-cloudinary.config(secure=True)
-
-# Allowed image types
+# ---- Local upload setup ----
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+
+# Folder where uploaded images will be stored
+UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # create if missing
 
 
 def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def upload_to_cloudinary(file_storage):
-    """Upload a Werkzeug FileStorage to Cloudinary and return the secure URL (or None)."""
+def save_image(file_storage):
+    """
+    Save uploaded file to static/uploads and return the relative path
+    (e.g. 'uploads/1700356234_buddy.jpg'), or None on failure.
+    """
     if not file_storage or not file_storage.filename:
         return None
     if not allowed_file(file_storage.filename):
         return None
-    result = cloudinary.uploader.upload(
-        file_storage,
-        folder="dog_app",
-        use_filename=True,
-        unique_filename=False,
-        overwrite=False,
-    )
-    return result.get("secure_url")
+
+    original = secure_filename(file_storage.filename)
+    name, ext = os.path.splitext(original)
+    # Use timestamp to avoid collisions
+    filename = f"{int(time.time())}_{name}{ext}"
+    path = os.path.join(UPLOAD_FOLDER, filename)
+
+    file_storage.save(path)
+
+    # Store a path relative to /static
+    return f"uploads/{filename}"
 
 
+# ---- DB lifecycle ----
 @app.teardown_appcontext
 def teardown_db(exception):
     close_db()
 
 
-# ---- One-time schema check (Flask 3+: use before_request + flag) ----
+# ---- One-time schema check to ensure image_url column exists ----
 app.config.setdefault("SCHEMA_CHECKED", False)
+
 
 @app.before_request
 def ensure_schema_once():
@@ -61,7 +67,7 @@ def ensure_schema_once():
     app.config["SCHEMA_CHECKED"] = True
 
 
-# --- Routes ---
+# ---- Routes ----
 @app.route("/")
 def index():
     db = get_db()
@@ -107,14 +113,14 @@ def create():
                 flash("Invalid image type. Use png/jpg/jpeg/gif/webp.")
             else:
                 try:
-                    image_url = upload_to_cloudinary(file)
+                    image_url = save_image(file)
                 except Exception:
                     image_url = None
                     flash("Image upload failed.")
 
         db.execute(
-            "INSERT INTO dogs (name, age, size, status, kid_friendly, cat_friendly, dog_friendly, notes, image_url) "
-            "VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO dogs (name, age, size, status, kid_friendly, cat_friendly, "
+            "dog_friendly, notes, image_url) VALUES (?,?,?,?,?,?,?,?,?)",
             (
                 form.get("name"),
                 int(form.get("age", 0) or 0),
@@ -152,15 +158,15 @@ def edit(dog_id):
                 flash("Invalid image type. Use png/jpg/jpeg/gif/webp.")
             else:
                 try:
-                    new_url = upload_to_cloudinary(file)
+                    new_url = save_image(file)
                     if new_url:
                         image_url = new_url
                 except Exception:
                     flash("Image upload failed; keeping previous image.")
 
         db.execute(
-            "UPDATE dogs SET name=?, age=?, size=?, status=?, kid_friendly=?, cat_friendly=?, dog_friendly=?, notes=?, image_url=? "
-            "WHERE id=?",
+            "UPDATE dogs SET name=?, age=?, size=?, status=?, kid_friendly=?, "
+            "cat_friendly=?, dog_friendly=?, notes=?, image_url=? WHERE id=?",
             (
                 form.get("name"),
                 int(form.get("age", 0) or 0),
@@ -181,6 +187,7 @@ def edit(dog_id):
     # Convert Row to simple object with attrs for template convenience
     class Obj:
         pass
+
     o = Obj()
     for k in dog.keys():
         setattr(o, k, dog[k])
@@ -198,8 +205,3 @@ def delete(dog_id):
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-
-
-
-
