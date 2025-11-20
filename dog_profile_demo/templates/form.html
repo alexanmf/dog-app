@@ -5,7 +5,6 @@
 
 <form method="post" enctype="multipart/form-data">
 
-  <!-- Row 1: Basic info -->
   <div class="row">
     <div>
       <label>Name</label>
@@ -21,7 +20,9 @@
       <label>Size</label>
       <select name="size">
         {% for s in ["Small","Medium","Large"] %}
-          <option value="{{s}}" {% if dog and dog.size==s %}selected{% endif %}>{{s}}</option>
+          <option value="{{ s }}" {% if dog and dog.size==s %}selected{% endif %}>
+            {{ s }}
+          </option>
         {% endfor %}
       </select>
     </div>
@@ -30,31 +31,38 @@
       <label>Status</label>
       <select name="status">
         {% for s in ["Intake","Fostered","Hold","Adopted","Transferred"] %}
-          <option value="{{s}}" {% if dog and dog.status==s %}selected{% endif %}>{{s}}</option>
+          <option value="{{ s }}" {% if dog and dog.status==s %}selected{% endif %}>
+            {{ s }}
+          </option>
         {% endfor %}
       </select>
     </div>
   </div>
 
-  <!-- Row 2: Friendly flags -->
   <div class="row">
     <div>
-      <label><input type="checkbox" name="kid_friendly"
-        {% if dog and dog.kid_friendly %}checked{% endif %}> Kid friendly</label>
+      <label>
+        <input type="checkbox" name="kid_friendly"
+               {% if dog and dog.kid_friendly %}checked{% endif %}>
+        Kid friendly
+      </label>
     </div>
-
     <div>
-      <label><input type="checkbox" name="cat_friendly"
-        {% if dog and dog.cat_friendly %}checked{% endif %}> Cat friendly</label>
+      <label>
+        <input type="checkbox" name="cat_friendly"
+               {% if dog and dog.cat_friendly %}checked{% endif %}>
+        Cat friendly
+      </label>
     </div>
-
     <div>
-      <label><input type="checkbox" name="dog_friendly"
-        {% if dog and dog.dog_friendly %}checked{% endif %}> Dog friendly</label>
+      <label>
+        <input type="checkbox" name="dog_friendly"
+               {% if dog and dog.dog_friendly %}checked{% endif %}>
+        Dog friendly
+      </label>
     </div>
   </div>
 
-  <!-- Row 3: Notes -->
   <div class="row full">
     <div>
       <label>Notes</label>
@@ -62,17 +70,14 @@
     </div>
   </div>
 
-  <!-- Row 4: Photo upload -->
   <div class="row full">
     <div>
       <label>Photo</label>
       <input type="file" name="image" accept="image/*">
-
-      <!-- Show current image when editing -->
       {% if dog and dog.image_url %}
         <div style="margin-top: 8px;">
-          <img src="{{ dog.image_url }}" alt="{{ dog.name }}"
-               style="max-height: 150px; border-radius: 8px;">
+          <img src="{{ url_for('static', filename=dog.image_url) }}"
+               alt="{{ dog.name }}" style="max-height:150px; border-radius:8px;">
         </div>
       {% endif %}
     </div>
@@ -86,3 +91,4 @@
 </form>
 
 {% endblock %}
+
