@@ -49,12 +49,12 @@
     <tr>
       <td>
         {% if d['image_url'] %}
-          <img src="{{ d['image_url'] }}" alt="{{ d['name'] }}"
+          <img src="{{ url_for('static', filename=d['image_url']) }}"
+               alt="{{ d['name'] }}"
                style="max-height:80px; border-radius:8px;">
         {% else %}
-          <!-- Optional placeholder; remove this whole block if you don't want a default image -->
-          <img src="{{ url_for('static', filename='no-image.png') }}" alt=""
-               style="max-height:80px; opacity:.6;">
+          <img src="{{ url_for('static', filename='no-image.png') }}"
+               alt="" style="max-height:80px; opacity:.6;">
         {% endif %}
       </td>
       <td>{{ d['name'] }}</td>
