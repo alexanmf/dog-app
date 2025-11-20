@@ -1,16 +1,22 @@
 {% extends "base.html" %}
 {% block content %}
+
 <h2>{{ 'Edit Dog' if dog else 'New Dog' }}</h2>
+
 <form method="post" enctype="multipart/form-data">
+
+  <!-- Row 1: Basic info -->
   <div class="row">
     <div>
       <label>Name</label>
       <input name="name" required value="{{ dog.name if dog else '' }}">
     </div>
+
     <div>
       <label>Age (years)</label>
       <input type="number" min="0" name="age" value="{{ dog.age if dog else 0 }}">
     </div>
+
     <div>
       <label>Size</label>
       <select name="size">
@@ -19,6 +25,7 @@
         {% endfor %}
       </select>
     </div>
+
     <div>
       <label>Status</label>
       <select name="status">
@@ -29,18 +36,25 @@
     </div>
   </div>
 
+  <!-- Row 2: Friendly flags -->
   <div class="row">
     <div>
-      <label><input type="checkbox" name="kid_friendly" {% if dog and dog.kid_friendly %}checked{% endif %}> Kid friendly</label>
+      <label><input type="checkbox" name="kid_friendly"
+        {% if dog and dog.kid_friendly %}checked{% endif %}> Kid friendly</label>
     </div>
+
     <div>
-      <label><input type="checkbox" name="cat_friendly" {% if dog and dog.cat_friendly %}checked{% endif %}> Cat friendly</label>
+      <label><input type="checkbox" name="cat_friendly"
+        {% if dog and dog.cat_friendly %}checked{% endif %}> Cat friendly</label>
     </div>
+
     <div>
-      <label><input type="checkbox" name="dog_friendly" {% if dog and dog.dog_friendly %}checked{% endif %}> Dog friendly</label>
+      <label><input type="checkbox" name="dog_friendly"
+        {% if dog and dog.dog_friendly %}checked{% endif %}> Dog friendly</label>
     </div>
   </div>
 
+  <!-- Row 3: Notes -->
   <div class="row full">
     <div>
       <label>Notes</label>
@@ -48,11 +62,19 @@
     </div>
   </div>
 
-  <!-- ⭐ Add your photo upload field here -->
+  <!-- Row 4: Photo upload -->
   <div class="row full">
     <div>
       <label>Photo</label>
       <input type="file" name="image" accept="image/*">
+
+      <!-- Show current image when editing -->
+      {% if dog and dog.image_url %}
+        <div style="margin-top: 8px;">
+          <img src="{{ dog.image_url }}" alt="{{ dog.name }}"
+               style="max-height: 150px; border-radius: 8px;">
+        </div>
+      {% endif %}
     </div>
   </div>
 
