@@ -1,3 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Dogs</h2>
+
+<form method="get" class="filters">
+  <input
+    type="text"
+    name="q"
+    placeholder="Search name or notes..."
+    value="{{ request.args.get('q','') }}"
+  >
+
+  <select name="status">
+    <option value="">Any status</option>
+    {% for s in ["Intake","Fostered","Hold","Adopted","Transferred"] %}
+      <option value="{{ s }}" {% if request.args.get('status') == s %}selected{% endif %}>
+        {{ s }}
+      </option>
+    {% endfor %}
+  </select>
+
+  <select name="size">
+    <option value="">Any size</option>
+    {% for s in ["Small","Medium","Large"] %}
+      <option value="{{ s }}" {% if request.args.get('size') == s %}selected{% endif %}>
+        {{ s }}
+      </option>
+    {% endfor %}
+  </select>
+
+  <button class="btn" type="submit">Filter</button>
+</form>
+
 <table>
   <thead>
     <tr>
@@ -15,25 +49,43 @@
     <tr>
       <td>
         {% if d['image_url'] %}
-          <img src="{{ d['image_url'] }}" alt="{{ d['name'] }}" style="max-height:80px; border-radius:8px;">
+          <img src="{{ d['image_url'] }}" alt="{{ d['name'] }}"
+               style="max-height:80px; border-radius:8px;">
         {% else %}
-          <img src="{{ url_for('static', filename='no-image.png') }}" alt="" style="max-height:80px; opacity:.6;">
+          <!-- Optional placeholder; remove this whole block if you don't want a default image -->
+          <img src="{{ url_for('static', filename='no-image.png') }}" alt=""
+               style="max-height:80px; opacity:.6;">
         {% endif %}
       </td>
       <td>{{ d['name'] }}</td>
       <td>{{ d['age'] }}</td>
       <td>{{ d['size'] }}</td>
       <td>
-        {% if d['kid_friendly'] %}<span class="badge">Kids</span>{% endif %}
-        {% if d['cat_friendly'] %}<span class="badge">Cats</span>{% endif %}
-        {% if d['dog_friendly'] %}<span class="badge">Dogs</span>{% endif %}
+        {% if d['kid_friendly'] %}
+          <span class="badge">Kids</span>
+        {% endif %}
+        {% if d['cat_friendly'] %}
+          <span class="badge">Cats</span>
+        {% endif %}
+        {% if d['dog_friendly'] %}
+          <span class="badge">Dogs</span>
+        {% endif %}
       </td>
       <td>{{ d['status'] }}</td>
       <td class="actions">
         <a href="{{ url_for('edit', dog_id=d['id']) }}">Edit</a>
-        <a href="{{ url_for('delete', dog_id=d['id']) }}" onclick="return confirm('Delete this dog?');">Delete</a>
+        <a href="{{ url_for('delete', dog_id=d['id']) }}"
+           onclick="return confirm('Delete this dog?');">
+          Delete
+        </a>
       </td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+
+{% if not dogs %}
+  <p>No dogs match your filters.</p>
+{% endif %}
+
+{% endblock %}
