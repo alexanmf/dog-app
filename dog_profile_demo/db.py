@@ -1,50 +1,44 @@
 import os
 from flask import g
-import psycopg
-import psycopg.rows
+import psycopg2
+import psycopg2.extras
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+
 def get_db():
-    """
-    Returns Postgres connection stored in Flask's g context.
-    """
     if "db" not in g:
-        g.db = psycopg.connect(
+        g.db = psycopg2.connect(
             DATABASE_URL,
-            row_factory=psycopg.rows.dict_row
+            cursor_factory=psycopg2.extras.RealDictCursor
         )
     return g.db
 
 
 def execute(query, params=None):
-    """
-    Safe helper that:
-      - converts SQLite-style '?' placeholders to Postgres '%s'
-      - automatically opens/closes a cursor
-      - returns list-of-dicts for SELECT queries
-      - returns None for INSERT/UPDATE/DELETE
-    """
-    conn = get_db()
+    db = get_db()
+    cur = db.cursor()
 
-    # Convert SQLite-style "?" placeholders → Postgres "%s"
+    # Convert SQLite-style ? placeholders → Postgres %s
     q = query.replace("?", "%s")
 
-    with conn.cursor() as cur:
-        cur.execute(q, params or [])
-        try:
-            return cur.fetchall()
-        except psycopg.ProgrammingError:
-            # no rows to fetch (INSERT/UPDATE/DELETE)
-            return None
+    cur.execute(q, params or [])
+    try:
+        rows = cur.fetchall()
+        return rows
+    except psycopg2.ProgrammingError:
+        return None
+
+
+def commit():
+    db = get_db()
+    db.commit()
 
 
 def close_db(e=None):
-    """
-    Closes database connection at end of request.
-    """
     db = g.pop("db", None)
     if db is not None:
         db.close()
+
 
 
