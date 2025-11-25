@@ -1,6 +1,74 @@
+# --- Python bytecode / caches ---
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# --- Virtual envs ---
 .venv/
+venv/
+env/
+
+# --- Local databases / state ---
+*.sqlite
+*.sqlite3
 dogs.db
+instance/
+*.db
+*.db-journal
+
+# --- Environment / secrets (never commit real values) ---
+.env
+*.env
+.env.*.local
+.envrc
+
+# --- Logs / coverage / reports ---
+logs/
+*.log
+coverage/
+.coverage
+.coverage.*
+htmlcov/
+
+# --- Build / tooling artifacts ---
+dist/
+build/
+.eggs/
+*.egg-info/
+.cache/
+pip-wheel-metadata/
+
+# --- Uploads & generated media (store in S3/Cloudinary, not Git) ---
+uploads/
+media/
+user_uploads/
+
+# Keep folder structure but ignore contents:
+# (create these files so empty dirs exist in repo)
+!uploads/.gitkeep
+!media/.gitkeep
+!user_uploads/.gitkeep
+
+# --- Frontend (if you add one later) ---
+node_modules/
+npm-debug.log*
+yarn*.log
+pnpm-*.log
+.eslintcache
+.next/
+.svelte-kit/
+*.map
+
+# --- OS / Editors ---
 .DS_Store
 Thumbs.db
+.idea/
+.vscode/
+
+# --- Docker / Compose (optional) ---
+*.pid
+tmp/
