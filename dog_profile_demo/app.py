@@ -63,19 +63,7 @@ def save_image(file_storage):
 def teardown_db(exception):
     close_db()
 
-# ---- One-time schema check to ensure image_url column exists ----
-app.config.setdefault("SCHEMA_CHECKED", False)
-
-@app.before_request
-def ensure_schema_once():
-    if app.config["SCHEMA_CHECKED"]:
-        return
-    db = get_db()
-    cols = [row["name"] for row in db.execute("PRAGMA table_info(dogs)").fetchall()]
-    if "image_url" not in cols:
-        db.execute("ALTER TABLE dogs ADD COLUMN image_url TEXT")
-        db.commit()
-    app.config["SCHEMA_CHECKED"] = True
+# (Removed the SQLite-only PRAGMA/ALTER TABLE block that broke on Postgres)
 
 # ---- Routes ----
 @app.route("/")
@@ -105,7 +93,9 @@ def index():
         params.append(size)
     sql += " ORDER BY name"
 
-    dogs = db.execute(sql, params).fetchall()
+    # Works with both SQLite cursor and our Postgres wrapper
+    res = db.execute(sql, params)
+    dogs = res.fetchall() if hasattr(res, "fetchall") else res
     return render_template("index.html", dogs=dogs)
 
 @app.route("/create", methods=["GET", "POST"])
@@ -150,7 +140,10 @@ def create():
 @app.route("/edit/<int:dog_id>", methods=["GET", "POST"])
 def edit(dog_id):
     db = get_db()
-    dog = db.execute("SELECT * FROM dogs WHERE id = ?", (dog_id,)).fetchone()
+
+    res = db.execute("SELECT * FROM dogs WHERE id = ?", (dog_id,))
+    dog = res.fetchone() if hasattr(res, "fetchone") else (res[0] if res else None)
+
     if not dog:
         flash("Dog not found.")
         return redirect(url_for("index"))
@@ -210,3 +203,4 @@ def delete(dog_id):
 
 if __name__ == "__main__":
     app.run(debug=True)
+
