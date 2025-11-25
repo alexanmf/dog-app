@@ -49,17 +49,21 @@
     <tr>
       <td>
         {% if d['image_url'] %}
-          <img src="{{ url_for('static', filename=d['image_url']) }}"
+          <!-- Cloudinary image (full URL) -->
+          <img src="{{ d['image_url'] }}"
                alt="{{ d['name'] }}"
                style="max-height:80px; border-radius:8px;">
         {% else %}
+          <!-- fallback placeholder -->
           <img src="{{ url_for('static', filename='no-image.png') }}"
                alt="" style="max-height:80px; opacity:.6;">
         {% endif %}
       </td>
+
       <td>{{ d['name'] }}</td>
       <td>{{ d['age'] }}</td>
       <td>{{ d['size'] }}</td>
+
       <td>
         {% if d['kid_friendly'] %}
           <span class="badge">Kids</span>
@@ -71,7 +75,9 @@
           <span class="badge">Dogs</span>
         {% endif %}
       </td>
+
       <td>{{ d['status'] }}</td>
+
       <td class="actions">
         <a href="{{ url_for('edit', dog_id=d['id']) }}">Edit</a>
         <a href="{{ url_for('delete', dog_id=d['id']) }}"
