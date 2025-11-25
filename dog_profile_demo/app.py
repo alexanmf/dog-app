@@ -3,15 +3,15 @@ import time
 from flask import Flask, render_template, request, redirect, url_for, flash
 from werkzeug.utils import secure_filename
 
-from db import get_db, close_db
+# NOTE: db.py must export get_db, close_db, and execute()
+from db import get_db, close_db, execute
 
-# NEW
 from dotenv import load_dotenv
 import cloudinary
 import cloudinary.uploader
 
 app = Flask(__name__)
-app.secret_key = "dev-secret"  # for flash()
+app.secret_key = "dev-secret"  # change in production via env
 
 load_dotenv()
 
@@ -46,7 +46,7 @@ def save_image(file_storage):
 
     original = secure_filename(file_storage.filename)
     try:
-        upload = cloudinary.uploader.upload(
+        up = cloudinary.uploader.upload(
             file_storage,
             folder=os.getenv("CLOUDINARY_FOLDER", "dogs/images"),
             resource_type="image",
@@ -54,7 +54,7 @@ def save_image(file_storage):
             unique_filename=True,
             overwrite=False,
         )
-        return upload.get("secure_url")
+        return up.get("secure_url")
     except Exception:
         return None
 
@@ -63,12 +63,9 @@ def save_image(file_storage):
 def teardown_db(exception):
     close_db()
 
-# (Removed the SQLite-only PRAGMA/ALTER TABLE block that broke on Postgres)
-
 # ---- Routes ----
 @app.route("/")
 def index():
-    db = get_db()
     q = request.args.get("q", "").strip()
     status = request.args.get("status", "").strip()
     size = request.args.get("size", "").strip()
@@ -93,15 +90,12 @@ def index():
         params.append(size)
     sql += " ORDER BY name"
 
-    # Works with both SQLite cursor and our Postgres wrapper
-    res = db.execute(sql, params)
-    dogs = res.fetchall() if hasattr(res, "fetchall") else res
+    dogs = execute(sql, params) or []
     return render_template("index.html", dogs=dogs)
 
 @app.route("/create", methods=["GET", "POST"])
 def create():
     if request.method == "POST":
-        db = get_db()
         form = request.form
 
         # optional image upload
@@ -117,7 +111,7 @@ def create():
                     image_url = None
                     flash("Image upload failed.")
 
-        db.execute(
+        execute(
             "INSERT INTO dogs (name, age, size, status, kid_friendly, cat_friendly, "
             "dog_friendly, notes, image_url) VALUES (?,?,?,?,?,?,?,?,?)",
             (
@@ -132,18 +126,16 @@ def create():
                 image_url,
             ),
         )
-        db.commit()
+        get_db().commit()
         flash("Dog created.")
         return redirect(url_for("index"))
+
     return render_template("form.html", dog=None)
 
 @app.route("/edit/<int:dog_id>", methods=["GET", "POST"])
 def edit(dog_id):
-    db = get_db()
-
-    res = db.execute("SELECT * FROM dogs WHERE id = ?", (dog_id,))
-    dog = res.fetchone() if hasattr(res, "fetchone") else (res[0] if res else None)
-
+    rows = execute("SELECT * FROM dogs WHERE id = ?", (dog_id,))
+    dog = rows[0] if rows else None
     if not dog:
         flash("Dog not found.")
         return redirect(url_for("index"))
@@ -152,7 +144,7 @@ def edit(dog_id):
         form = request.form
 
         # keep old URL unless a new upload is provided
-        image_url = dog["image_url"] if "image_url" in dog.keys() else None
+        image_url = dog.get("image_url")
         file = request.files.get("image")
         if file and file.filename:
             if not allowed_file(file.filename):
@@ -165,7 +157,7 @@ def edit(dog_id):
                 except Exception:
                     flash("Image upload failed; keeping previous image.")
 
-        db.execute(
+        execute(
             "UPDATE dogs SET name=?, age=?, size=?, status=?, kid_friendly=?, "
             "cat_friendly=?, dog_friendly=?, notes=?, image_url=? WHERE id=?",
             (
@@ -181,26 +173,25 @@ def edit(dog_id):
                 dog_id,
             ),
         )
-        db.commit()
+        get_db().commit()
         flash("Dog updated.")
         return redirect(url_for("index"))
 
-    class Obj:
-        pass
-
+    # simple object for the template to use dot-notation
+    class Obj: pass
     o = Obj()
-    for k in dog.keys():
-        setattr(o, k, dog[k])
+    for k, v in dog.items():
+        setattr(o, k, v)
     return render_template("form.html", dog=o)
 
 @app.route("/delete/<int:dog_id>")
 def delete(dog_id):
-    db = get_db()
-    db.execute("DELETE FROM dogs WHERE id=?", (dog_id,))
-    db.commit()
+    execute("DELETE FROM dogs WHERE id=?", (dog_id,))
+    get_db().commit()
     flash("Dog deleted.")
     return redirect(url_for("index"))
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
