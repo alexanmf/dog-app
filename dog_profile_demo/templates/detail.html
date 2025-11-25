@@ -1,3 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ dog.name }}</h1>
+
 {% if dog.image_url %}
-  <img src="{{ dog.image_url }}" alt="{{ dog.name }}" style="max-width:400px; border-radius:10px; display:block; margin:auto;">
+  <img src="{{ dog.image_url }}" alt="{{ dog.name }}"
+       style="max-width:400px; border-radius:10px; display:block; margin:auto;">
 {% endif %}
+
+<ul class="dog-info">
+  <li><strong>Age:</strong> {{ dog.age }}</li>
+  <li><strong>Size:</strong> {{ dog.size }}</li>
+  <li><strong>Status:</strong> {{ dog.status }}</li>
+  <li><strong>Kid friendly:</strong> {{ 'Yes' if dog.kid_friendly else 'No' }}</li>
+  <li><strong>Cat friendly:</strong> {{ 'Yes' if dog.cat_friendly else 'No' }}</li>
+  <li><strong>Dog friendly:</strong> {{ 'Yes' if dog.dog_friendly else 'No' }}</li>
+  <li><strong>Notes:</strong> {{ dog.notes }}</li>
+</ul>
+{% endblock %}
+
