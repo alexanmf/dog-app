@@ -5,28 +5,39 @@ from werkzeug.utils import secure_filename
 
 from db import get_db, close_db
 
+# NEW
+from dotenv import load_dotenv
+import cloudinary
+import cloudinary.uploader
+
 app = Flask(__name__)
 app.secret_key = "dev-secret"  # for flash()
+
+load_dotenv()
+
+# Configure Cloudinary from CLOUDINARY_URL or individual vars
+if os.getenv("CLOUDINARY_URL"):
+    cloudinary.config(cloudinary_url=os.getenv("CLOUDINARY_URL"))
+else:
+    cloudinary.config(
+        cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+        api_key=os.getenv("CLOUDINARY_API_KEY"),
+        api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+        secure=True,
+    )
 
 # Optional: cap upload size (5 MB)
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 
-# ---- Local upload setup ----
+# ---- Cloudinary upload setup (images only) ----
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
-
-# Folder where uploaded images will be stored
-UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # create if missing
-
 
 def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
 def save_image(file_storage):
     """
-    Save uploaded file to static/uploads and return the relative path
-    (e.g. 'uploads/1700356234_buddy.jpg'), or None on failure.
+    Upload the image to Cloudinary and return secure_url, or None on failure.
     """
     if not file_storage or not file_storage.filename:
         return None
@@ -34,26 +45,26 @@ def save_image(file_storage):
         return None
 
     original = secure_filename(file_storage.filename)
-    name, ext = os.path.splitext(original)
-    # Use timestamp to avoid collisions
-    filename = f"{int(time.time())}_{name}{ext}"
-    path = os.path.join(UPLOAD_FOLDER, filename)
-
-    file_storage.save(path)
-
-    # Store a path relative to /static
-    return f"uploads/{filename}"
-
+    try:
+        upload = cloudinary.uploader.upload(
+            file_storage,
+            folder=os.getenv("CLOUDINARY_FOLDER", "dogs/images"),
+            resource_type="image",
+            use_filename=True,
+            unique_filename=True,
+            overwrite=False,
+        )
+        return upload.get("secure_url")
+    except Exception:
+        return None
 
 # ---- DB lifecycle ----
 @app.teardown_appcontext
 def teardown_db(exception):
     close_db()
 
-
 # ---- One-time schema check to ensure image_url column exists ----
 app.config.setdefault("SCHEMA_CHECKED", False)
-
 
 @app.before_request
 def ensure_schema_once():
@@ -65,7 +76,6 @@ def ensure_schema_once():
         db.execute("ALTER TABLE dogs ADD COLUMN image_url TEXT")
         db.commit()
     app.config["SCHEMA_CHECKED"] = True
-
 
 # ---- Routes ----
 @app.route("/")
@@ -97,7 +107,6 @@ def index():
 
     dogs = db.execute(sql, params).fetchall()
     return render_template("index.html", dogs=dogs)
-
 
 @app.route("/create", methods=["GET", "POST"])
 def create():
@@ -137,7 +146,6 @@ def create():
         flash("Dog created.")
         return redirect(url_for("index"))
     return render_template("form.html", dog=None)
-
 
 @app.route("/edit/<int:dog_id>", methods=["GET", "POST"])
 def edit(dog_id):
@@ -184,7 +192,6 @@ def edit(dog_id):
         flash("Dog updated.")
         return redirect(url_for("index"))
 
-    # Convert Row to simple object with attrs for template convenience
     class Obj:
         pass
 
@@ -193,7 +200,6 @@ def edit(dog_id):
         setattr(o, k, dog[k])
     return render_template("form.html", dog=o)
 
-
 @app.route("/delete/<int:dog_id>")
 def delete(dog_id):
     db = get_db()
@@ -201,7 +207,6 @@ def delete(dog_id):
     db.commit()
     flash("Dog deleted.")
     return redirect(url_for("index"))
-
 
 if __name__ == "__main__":
     app.run(debug=True)
