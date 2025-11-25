@@ -3,8 +3,9 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dog Profile Demo</title>
+    <title>{% block title %}Dog Profile Demo{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    {% block head %}{% endblock %}
   </head>
   <body>
     <header>
@@ -14,16 +15,23 @@
         <a class="btn primary" href="{{ url_for('create') }}">+ New Dog</a>
       </nav>
     </header>
+
     <div class="container">
       {% with messages = get_flashed_messages() %}
         {% if messages %}
-          <ul>
-            {% for m in messages %}<li>{{ m }}</li>{% endfor %}
+          <ul class="flash" role="status" aria-live="polite">
+            {% for m in messages %}
+              <li>{{ m }}</li>
+            {% endfor %}
           </ul>
         {% endif %}
       {% endwith %}
+
       {% block content %}{% endblock %}
     </div>
+
     <footer>Demo app for class — Flask + SQLite</footer>
+
+    {% block scripts %}{% endblock %}
   </body>
 </html>
