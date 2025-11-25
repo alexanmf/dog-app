@@ -7,8 +7,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db():
     """
-    Returns a Postgres connection stored in Flask's g context.
-    Connection uses dict_row so rows behave like sqlite3.Row.
+    Returns Postgres connection stored in Flask's g context.
     """
     if "db" not in g:
         g.db = psycopg.connect(
@@ -17,21 +16,33 @@ def get_db():
         )
     return g.db
 
+
 def execute(query, params=None):
     """
-    Helper that automatically opens a cursor, executes, and returns rows.
-    Matches sqlite `db.execute()` behavior.
+    Safe helper that:
+      - converts SQLite-style '?' placeholders to Postgres '%s'
+      - automatically opens/closes a cursor
+      - returns list-of-dicts for SELECT queries
+      - returns None for INSERT/UPDATE/DELETE
     """
     conn = get_db()
+
+    # Convert SQLite-style "?" placeholders → Postgres "%s"
+    q = query.replace("?", "%s")
+
     with conn.cursor() as cur:
-        cur.execute(query, params or [])
+        cur.execute(q, params or [])
         try:
             return cur.fetchall()
         except psycopg.ProgrammingError:
-            # No results to fetch (INSERT, UPDATE, DELETE)
+            # no rows to fetch (INSERT/UPDATE/DELETE)
             return None
 
+
 def close_db(e=None):
+    """
+    Closes database connection at end of request.
+    """
     db = g.pop("db", None)
     if db is not None:
         db.close()
