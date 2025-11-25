@@ -76,8 +76,10 @@
       <input type="file" name="image" accept="image/*">
       {% if dog and dog.image_url %}
         <div style="margin-top: 8px;">
-          <img src="{{ url_for('static', filename=dog.image_url) }}"
-               alt="{{ dog.name }}" style="max-height:150px; border-radius:8px;">
+          <!-- Cloudinary URL is a full URL; no url_for('static') -->
+          <img src="{{ dog.image_url }}"
+               alt="{{ dog.name }}"
+               style="max-height:150px; border-radius:8px;">
         </div>
       {% endif %}
     </div>
