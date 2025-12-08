@@ -36,7 +36,7 @@ else:
 # Allowed types
 # ---------------------------
 ALLOWED_IMAGE_EXT = {"png", "jpg", "jpeg", "gif", "webp"}
-ALLOWED_DOC_EXT = {"pdf", "doc", "docx", "xls", "xlsx", "csv", "txt"}
+ALLOWED_DOC_EXT   = {"pdf", "doc", "docx", "xls", "xlsx", "csv", "txt"}
 
 def allowed_image(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXT
@@ -98,20 +98,24 @@ def save_document(file_storage):
 def teardown_db(exception):
     close_db()
 
-# Ensure documents table exists (safe to run every deploy)
-@app.before_first_request
-def ensure_docs_table():
-    execute("""
-        CREATE TABLE IF NOT EXISTS dog_documents (
-            id SERIAL PRIMARY KEY,
-            dog_id INTEGER NOT NULL REFERENCES dogs(id) ON DELETE CASCADE,
-            title TEXT NOT NULL,
-            file_url TEXT NOT NULL,
-            content_type TEXT,
-            uploaded_at TIMESTAMPTZ DEFAULT NOW()
-        )
-    """)
-    get_db().commit()
+# Ensure documents table exists (Flask 3 compatible: run once on first request)
+app.config["DOCS_TABLE_READY"] = False
+
+@app.before_request
+def ensure_docs_table_once():
+    if not app.config["DOCS_TABLE_READY"]:
+        execute("""
+            CREATE TABLE IF NOT EXISTS dog_documents (
+                id SERIAL PRIMARY KEY,
+                dog_id INTEGER NOT NULL REFERENCES dogs(id) ON DELETE CASCADE,
+                title TEXT NOT NULL,
+                file_url TEXT NOT NULL,
+                content_type TEXT,
+                uploaded_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        """)
+        get_db().commit()
+        app.config["DOCS_TABLE_READY"] = True
 
 # ---------------------------
 # Routes
@@ -226,7 +230,6 @@ def edit(dog_id):
         flash("Dog updated.")
         return redirect(url_for("index"))
 
-    # Simple object for template dot-notation if you prefer
     class Obj: pass
     o = Obj()
     for k, v in dog.items():
@@ -300,5 +303,6 @@ def health():
 # ---------------------------
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
