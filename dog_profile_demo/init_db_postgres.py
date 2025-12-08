@@ -1,36 +1,46 @@
-import os, sys
-SCHEMA_FILE = "schema_postgres.sql"
+# dog_profile_demo/init_db_postgres.py
+import os
+import psycopg
+from psycopg.rows import dict_row
 
-def main():
-    url = os.getenv("DATABASE_URL")
-    if not url:
-        print("DATABASE_URL not set", file=sys.stderr); sys.exit(1)
+DDL = """
+CREATE TABLE IF NOT EXISTS dogs (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  age INT NOT NULL,
+  size TEXT NOT NULL,
+  status TEXT NOT NULL,
+  kid_friendly INT NOT NULL DEFAULT 0,
+  cat_friendly INT NOT NULL DEFAULT 0,
+  dog_friendly INT NOT NULL DEFAULT 0,
+  notes TEXT,
+  image_url TEXT
+);
+"""
 
-    import psycopg
-    with psycopg.connect(url) as conn:
-        with conn.cursor() as cur, open(SCHEMA_FILE, "r", encoding="utf-8") as f:
-            sql = f.read()
-            for stmt in [s.strip() for s in sql.split(";") if s.strip()]:
-                cur.execute(stmt)
-        conn.commit()
+SEED = [
+    ("Buddy", 2, "Medium", "Intake", 1, 0, 1, "Sweet and energetic."),
+    ("Molly", 7, "Small", "Fostered", 1, 1, 1, "On thyroid meds."),
+    ("Zeus", 4, "Large", "Hold", 0, 0, 0, "Needs decompression."),
+]
 
-        dogs = [
-            ("Buddy", 2, "Medium", "Intake", True, False, True, "Sweet and energetic. Microchip pending."),
-            ("Molly", 7, "Small", "Fostered", True, True, True, "On thyroid meds. Great with kids."),
-            ("Zeus", 4, "Large", "Hold", False, False, False, "Needs decompression. No cats."),
-        ]
+def run():
+    url = os.environ["DATABASE_URL"]
+    with psycopg.connect(url, row_factory=dict_row) as conn:
         with conn.cursor() as cur:
-            cur.executemany(
-                """
-                INSERT INTO dogs
-                (name, age, size, status, kid_friendly, cat_friendly, dog_friendly, notes)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
-                """,
-                dogs,
-            )
+            cur.execute(DDL)
+            # seed only if table is empty
+            cur.execute("SELECT COUNT(*) AS c FROM dogs;")
+            if cur.fetchone()["c"] == 0:
+                cur.executemany(
+                    "INSERT INTO dogs (name, age, size, status, kid_friendly, cat_friendly, dog_friendly, notes) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
+                    SEED,
+                )
         conn.commit()
-        print("Initialized PostgreSQL with sample data.")
+    print("Postgres ready (table ensured, seeds applied if empty).")
 
 if __name__ == "__main__":
-    main()
+    run()
+
 
