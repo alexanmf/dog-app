@@ -1,21 +1,27 @@
 import os
-import time
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, abort
 from werkzeug.utils import secure_filename
 
-# NOTE: db.py must export get_db, close_db, and execute()
+# db.py must export these helpers.
 from db import get_db, close_db, execute
 
 from dotenv import load_dotenv
 import cloudinary
 import cloudinary.uploader
 
+# ---------------------------
+# App & config
+# ---------------------------
 app = Flask(__name__)
-app.secret_key = "dev-secret"  # change in production via env
-
 load_dotenv()
 
-# Configure Cloudinary from CLOUDINARY_URL or individual vars
+# Use a real secret in production via env
+app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
+
+# Max upload size (adjust if you expect bigger PDFs)
+app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("MAX_CONTENT_LENGTH", 10 * 1024 * 1024))  # 10 MB
+
+# Cloudinary config (either CLOUDINARY_URL or individual vars)
 if os.getenv("CLOUDINARY_URL"):
     cloudinary.config(cloudinary_url=os.getenv("CLOUDINARY_URL"))
 else:
@@ -26,26 +32,29 @@ else:
         secure=True,
     )
 
-# Optional: cap upload size (5 MB)
-app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
+# ---------------------------
+# Allowed types
+# ---------------------------
+ALLOWED_IMAGE_EXT = {"png", "jpg", "jpeg", "gif", "webp"}
+ALLOWED_DOC_EXT = {"pdf", "doc", "docx", "xls", "xlsx", "csv", "txt"}
 
-# ---- Cloudinary upload setup (images only) ----
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+def allowed_image(filename: str) -> bool:
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXT
 
-def allowed_file(filename: str) -> bool:
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+def allowed_doc(filename: str) -> bool:
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_DOC_EXT
 
+# ---------------------------
+# Upload helpers
+# ---------------------------
 def save_image(file_storage):
     """
-    Upload the image to Cloudinary and return secure_url, or None on failure.
+    Upload an image to Cloudinary and return secure_url, or None on failure.
     """
-    if not file_storage or not file_storage.filename:
+    if not file_storage or not file_storage.filename or not allowed_image(file_storage.filename):
         return None
-    if not allowed_file(file_storage.filename):
-        return None
-
-    original = secure_filename(file_storage.filename)
     try:
+        original = secure_filename(file_storage.filename)
         up = cloudinary.uploader.upload(
             file_storage,
             folder=os.getenv("CLOUDINARY_FOLDER", "dogs/images"),
@@ -58,12 +67,55 @@ def save_image(file_storage):
     except Exception:
         return None
 
-# ---- DB lifecycle ----
+def save_document(file_storage):
+    """
+    Upload a document (PDF/DOCX/etc.) to Cloudinary as raw and
+    return {url, title, content_type} or None on failure.
+    """
+    if not file_storage or not file_storage.filename or not allowed_doc(file_storage.filename):
+        return None
+    try:
+        up = cloudinary.uploader.upload(
+            file_storage,
+            folder=os.getenv("CLOUDINARY_DOC_FOLDER", "dogs/docs"),
+            resource_type="raw",   # required for non-image files
+            use_filename=True,
+            unique_filename=True,
+            overwrite=False,
+        )
+        return {
+            "url": up.get("secure_url"),
+            "title": file_storage.filename,
+            "content_type": file_storage.mimetype or None,
+        }
+    except Exception:
+        return None
+
+# ---------------------------
+# DB lifecycle
+# ---------------------------
 @app.teardown_appcontext
 def teardown_db(exception):
     close_db()
 
-# ---- Routes ----
+# Ensure documents table exists (safe to run every deploy)
+@app.before_first_request
+def ensure_docs_table():
+    execute("""
+        CREATE TABLE IF NOT EXISTS dog_documents (
+            id SERIAL PRIMARY KEY,
+            dog_id INTEGER NOT NULL REFERENCES dogs(id) ON DELETE CASCADE,
+            title TEXT NOT NULL,
+            file_url TEXT NOT NULL,
+            content_type TEXT,
+            uploaded_at TIMESTAMPTZ DEFAULT NOW()
+        )
+    """)
+    get_db().commit()
+
+# ---------------------------
+# Routes
+# ---------------------------
 @app.route("/")
 def index():
     q = request.args.get("q", "").strip()
@@ -98,17 +150,16 @@ def create():
     if request.method == "POST":
         form = request.form
 
-        # optional image upload
         image_url = None
         file = request.files.get("image")
         if file and file.filename:
-            if not allowed_file(file.filename):
+            if not allowed_image(file.filename):
                 flash("Invalid image type. Use png/jpg/jpeg/gif/webp.")
             else:
-                try:
-                    image_url = save_image(file)
-                except Exception:
-                    image_url = None
+                url = save_image(file)
+                if url:
+                    image_url = url
+                else:
                     flash("Image upload failed.")
 
         execute(
@@ -142,19 +193,17 @@ def edit(dog_id):
 
     if request.method == "POST":
         form = request.form
-
-        # keep old URL unless a new upload is provided
         image_url = dog.get("image_url")
+
         file = request.files.get("image")
         if file and file.filename:
-            if not allowed_file(file.filename):
+            if not allowed_image(file.filename):
                 flash("Invalid image type. Use png/jpg/jpeg/gif/webp.")
             else:
-                try:
-                    new_url = save_image(file)
-                    if new_url:
-                        image_url = new_url
-                except Exception:
+                url = save_image(file)
+                if url:
+                    image_url = url
+                else:
                     flash("Image upload failed; keeping previous image.")
 
         execute(
@@ -177,7 +226,7 @@ def edit(dog_id):
         flash("Dog updated.")
         return redirect(url_for("index"))
 
-    # simple object for the template to use dot-notation
+    # Simple object for template dot-notation if you prefer
     class Obj: pass
     o = Obj()
     for k, v in dog.items():
@@ -191,6 +240,65 @@ def delete(dog_id):
     flash("Dog deleted.")
     return redirect(url_for("index"))
 
+# -------- Detail + Documents --------
+@app.route("/dog/<int:dog_id>")
+def detail(dog_id):
+    rows = execute("SELECT * FROM dogs WHERE id = ?", (dog_id,))
+    dog = rows[0] if rows else None
+    if not dog:
+        flash("Dog not found.")
+        return redirect(url_for("index"))
+
+    docs = execute(
+        "SELECT id, title, file_url, content_type, uploaded_at "
+        "FROM dog_documents WHERE dog_id = ? ORDER BY uploaded_at DESC",
+        (dog_id,)
+    ) or []
+    return render_template("detail.html", dog=dog, docs=docs)
+
+@app.route("/dog/<int:dog_id>/upload_doc", methods=["POST"])
+def upload_doc(dog_id):
+    if not execute("SELECT id FROM dogs WHERE id = ?", (dog_id,)):
+        flash("Dog not found.")
+        return redirect(url_for("index"))
+
+    file = request.files.get("document")
+    meta = save_document(file)
+    if not meta:
+        flash("Invalid or failed document upload. Allowed: pdf/doc/docx/xls/xlsx/csv/txt.")
+        return redirect(url_for("detail", dog_id=dog_id))
+
+    title = request.form.get("title") or meta["title"]
+    execute(
+        "INSERT INTO dog_documents (dog_id, title, file_url, content_type) VALUES (?,?,?,?)",
+        (dog_id, title, meta["url"], meta["content_type"])
+    )
+    get_db().commit()
+    flash("Document uploaded.")
+    return redirect(url_for("detail", dog_id=dog_id))
+
+@app.route("/doc/<int:doc_id>/delete", methods=["POST"])
+def delete_doc(doc_id):
+    rows = execute("SELECT id, dog_id FROM dog_documents WHERE id = ?", (doc_id,))
+    if not rows:
+        flash("Document not found.")
+        return redirect(url_for("index"))
+    dog_id = rows[0]["dog_id"]
+
+    execute("DELETE FROM dog_documents WHERE id = ?", (doc_id,))
+    get_db().commit()
+    flash("Document deleted.")
+    return redirect(url_for("detail", dog_id=dog_id))
+
+# Health check (optional)
+@app.route("/health")
+def health():
+    return "ok", 200
+
+# ---------------------------
+# Entrypoint
+# ---------------------------
 if __name__ == "__main__":
     app.run(debug=True)
+
 
