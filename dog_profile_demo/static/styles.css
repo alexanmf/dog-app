@@ -1,20 +1,220 @@
+/* ---------------------------------------
+   Global / Layout
+---------------------------------------- */
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  margin: 0;
+  background: #fff;
+  color: #111;
+}
 
-body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; }
-header { display:flex; justify-content:space-between; align-items:center; padding: 12px 20px; background:#f5f5f5; border-bottom:1px solid #ddd; }
-header a.title { text-decoration:none; color:#111; font-weight:700; }
-.container { max-width: 980px; margin: 24px auto; padding: 0 16px; }
-table { width:100%; border-collapse: collapse; }
-th, td { padding: 10px; border-bottom: 1px solid #eee; text-align:left; }
-th { background:#fafafa; }
-.actions a { margin-right:8px; }
-.btn { display:inline-block; padding:8px 12px; border:1px solid #ddd; border-radius:8px; text-decoration:none; color:#111; }
-.btn.primary { background:#111; color:#fff; border-color:#111; }
-form .row { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
-form .row.full { grid-template-columns: 1fr; }
-label { display:block; font-size: 14px; margin-bottom:4px; }
-input[type="text"], input[type="number"], textarea, select { width:100%; padding:8px; border:1px solid #ddd; border-radius:6px; }
-.filters { display:flex; gap:8px; margin-bottom: 12px; }
-.badge { display:inline-block; font-size:12px; padding:2px 6px; border:1px solid #ddd; border-radius:999px; margin-right:6px; }
-.status-Intake { background:#fff; }
-status-Fostered {}
-footer { color:#666; text-align:center; padding: 24px; }
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+}
+
+header a.title {
+  text-decoration: none;
+  color: #111;
+  font-weight: 700;
+}
+
+.container {
+  max-width: 980px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+/* ---------------------------------------
+   Table / List
+---------------------------------------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+th {
+  background: #fafafa;
+  font-weight: 600;
+}
+
+.actions a {
+  margin-right: 8px;
+}
+
+/* ---------------------------------------
+   Buttons
+---------------------------------------- */
+.btn {
+  display: inline-block;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #111;
+  background: #fff;
+  cursor: pointer;
+}
+
+.btn.primary {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.btn.small {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+/* ---------------------------------------
+   Forms
+---------------------------------------- */
+form .row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+form .row.full {
+  grid-template-columns: 1fr;
+}
+
+label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="file"],
+textarea,
+select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+/* Search / filter bar */
+.filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+/* ---------------------------------------
+   Badges
+---------------------------------------- */
+.badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 6px;
+  border: 1px solid #ddd;
+  border-radius: 999px;
+  margin-right: 6px;
+  background: #fafafa;
+}
+
+/* ---------------------------------------
+   Detail Page Layout
+---------------------------------------- */
+.dog-header {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin: 16px 0 30px;
+}
+
+.dog-header img {
+  max-width: 300px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.dog-header .dog-info {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dog-info li {
+  margin-bottom: 6px;
+}
+
+/* ---------------------------------------
+   Document List
+---------------------------------------- */
+.docs-list {
+  padding-left: 0;
+  list-style: none;
+  margin-top: 20px;
+}
+
+.docs-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.docs-list a.file-link {
+  color: #0066cc;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.docs-list a.file-link:hover {
+  text-decoration: underline;
+}
+
+.delete-form {
+  display: inline;
+}
+
+/* ---------------------------------------
+   Footer
+---------------------------------------- */
+footer {
+  color: #666;
+  text-align: center;
+  padding: 24px;
+}
+
+/* ---------------------------------------
+   Responsive Fixes
+---------------------------------------- */
+@media (max-width: 700px) {
+  .dog-header {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .dog-header img {
+    max-width: 90%;
+  }
+
+  form .row {
+    grid-template-columns: 1fr;
+  }
+
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
