@@ -3,7 +3,9 @@
 
 <h1>{{ dog.name }}</h1>
 
+<!-- Top section: photo left, details right -->
 <div class="dog-header">
+  {# figure out the correct src: Cloudinary full URL OR /static relative path #}
   {% set raw = dog.image_url %}
   {% if raw %}
     {% if raw.startswith('http') %}
@@ -22,11 +24,72 @@
     <li><strong>Cat friendly:</strong> {{ 'Yes' if dog.cat_friendly else 'No' }}</li>
     <li><strong>Dog friendly:</strong> {{ 'Yes' if dog.dog_friendly else 'No' }}</li>
     <li><strong>Notes:</strong> {{ dog.notes }}</li>
+
+    <li style="margin-top:10px;">
+      <a class="btn" href="{{ url_for('edit', dog_id=dog.id) }}">Edit</a>
+      <a class="btn" href="{{ url_for('index') }}">Back</a>
+    </li>
   </ul>
 </div>
 
-{# … keep the rest of your documents section here … #}
+<hr>
+
+<!-- Documents list -->
+<h3>Documents</h3>
+
+{% if docs and docs|length %}
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Type</th>
+        <th>Uploaded</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for doc in docs %}
+      <tr>
+        <td>
+          <a href="{{ doc.file_url }}" target="_blank" rel="noopener">{{ doc.title }}</a>
+        </td>
+        <td>{{ doc.content_type or 'file' }}</td>
+        <td>{{ doc.uploaded_at }}</td>
+        <td>
+          <form class="delete-form" method="post" action="{{ url_for('delete_doc', doc_id=doc.id) }}"
+                onsubmit="return confirm('Delete this document?');">
+            <button class="btn small" type="submit">Delete</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>No documents uploaded yet.</p>
+{% endif %}
+
+<!-- Upload new document -->
+<h4 style="margin-top:16px;">Upload a new document</h4>
+<form method="post"
+      action="{{ url_for('upload_doc', dog_id=dog.id) }}"
+      enctype="multipart/form-data">
+  <div class="row">
+    <div>
+      <label>Title (optional)</label>
+      <input name="title" placeholder="e.g., Rabies Certificate">
+    </div>
+    <div>
+      <label>Choose file (pdf, doc, docx, xls, xlsx, csv, txt)</label>
+      <input type="file" name="document" required>
+    </div>
+  </div>
+  <p>
+    <button class="btn primary" type="submit">Upload Document</button>
+  </p>
+</form>
 
 {% endblock %}
+
 
 
