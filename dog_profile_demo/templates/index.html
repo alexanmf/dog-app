@@ -1,92 +1,114 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2>{{ 'Edit Dog' if dog else 'New Dog' }}</h2>
+<h2>Dogs</h2>
 
-<form method="post" enctype="multipart/form-data">
+<!-- Filters -->
+<form method="get" class="filters">
+  <input
+    type="text"
+    name="q"
+    placeholder="Search name or notes..."
+    value="{{ request.args.get('q','') }}"
+  >
 
-  <div class="row">
-    <div>
-      <label for="name">Name</label>
-      <input id="name" name="name" required value="{{ dog.name if dog else '' }}">
-    </div>
+  <select name="status">
+    <option value="">Any status</option>
+    {% for s in ["Intake","Fostered","Hold","Adopted","Transferred"] %}
+      <option value="{{ s }}" {% if request.args.get('status') == s %}selected{% endif %}>
+        {{ s }}
+      </option>
+    {% endfor %}
+  </select>
 
-    <div>
-      <label for="age">Age (years)</label>
-      <input id="age" type="number" min="0" name="age" value="{{ dog.age if dog else 0 }}">
-    </div>
+  <select name="size">
+    <option value="">Any size</option>
+    {% for s in ["Small","Medium","Large"] %}
+      <option value="{{ s }}" {% if request.args.get('size') == s %}selected{% endif %}>
+        {{ s }}
+      </option>
+    {% endfor %}
+  </select>
 
-    <div>
-      <label for="size">Size</label>
-      <select id="size" name="size">
-        {% for s in ["Small","Medium","Large"] %}
-          <option value="{{ s }}" {% if dog and dog.size==s %}selected{% endif %}>{{ s }}</option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div>
-      <label for="status">Status</label>
-      <select id="status" name="status">
-        {% for s in ["Intake","Fostered","Hold","Adopted","Transferred"] %}
-          <option value="{{ s }}" {% if dog and dog.status==s %}selected{% endif %}>{{ s }}</option>
-        {% endfor %}
-      </select>
-    </div>
-  </div>
-
-  <div class="row">
-    <div>
-      <label>
-        <input type="checkbox" name="kid_friendly" {% if dog and dog.kid_friendly %}checked{% endif %}>
-        Kid friendly
-      </label>
-    </div>
-    <div>
-      <label>
-        <input type="checkbox" name="cat_friendly" {% if dog and dog.cat_friendly %}checked{% endif %}>
-        Cat friendly
-      </label>
-    </div>
-    <div>
-      <label>
-        <input type="checkbox" name="dog_friendly" {% if dog and dog.dog_friendly %}checked{% endif %}>
-        Dog friendly
-      </label>
-    </div>
-  </div>
-
-  <div class="row full">
-    <div>
-      <label for="notes">Notes</label>
-      <textarea id="notes" name="notes" rows="6">{{ dog.notes if dog else '' }}</textarea>
-    </div>
-  </div>
-
-  <div class="row full">
-    <div>
-      <label for="image">Photo</label>
-      <input id="image" type="file" name="image" accept="image/png,image/jpeg,image/gif,image/webp">
-      {% if dog and dog.image_url %}
-        {% set raw = dog.image_url %}
-        {% if raw.startswith('http') %}
-          {% set preview_src = raw %}
-        {% else %}
-          {% set preview_src = url_for('static', filename=raw) %}
-        {% endif %}
-        <div style="margin-top: 8px;">
-          <img src="{{ preview_src }}" alt="{{ dog.name }}" style="max-height:150px; border-radius:8px;">
-        </div>
-      {% endif %}
-    </div>
-  </div>
-
-  <p>
-    <button class="btn primary" type="submit">Save</button>
-    <a class="btn" href="{{ url_for('index') }}">Cancel</a>
-  </p>
-
+  <button class="btn" type="submit">Filter</button>
 </form>
+
+<!-- Dogs Table -->
+<table>
+  <thead>
+    <tr>
+      <th>Photo</th>
+      <th>Name</th>
+      <th>Age</th>
+      <th>Size</th>
+      <th>Friendly</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for d in dogs %}
+    <tr>
+
+      <!-- IMAGE COLUMN -->
+      <td>
+        {% if d['image_url'] %}
+          {% set raw = d['image_url'] %}
+          {% if raw.startswith('http') %}
+            {% set img_src = raw %}
+          {% else %}
+            {% set img_src = url_for('static', filename=raw) %}
+          {% endif %}
+          <img 
+            src="{{ img_src }}"
+            alt="{{ d['name'] }}"
+            style="max-height:80px; border-radius:8px;">
+        {% else %}
+          <img 
+            src="{{ url_for('static', filename='no-image.png') }}"
+            alt="" 
+            style="max-height:80px; opacity:.6;">
+        {% endif %}
+      </td>
+
+      <td>{{ d['name'] }}</td>
+      <td>{{ d['age'] }}</td>
+      <td>{{ d['size'] }}</td>
+
+      <!-- Friendly badges -->
+      <td>
+        {% if d['kid_friendly'] %}
+          <span class="badge">Kids</span>
+        {% endif %}
+        {% if d['cat_friendly'] %}
+          <span class="badge">Cats</span>
+        {% endif %}
+        {% if d['dog_friendly'] %}
+          <span class="badge">Dogs</span>
+        {% endif %}
+      </td>
+
+      <td>{{ d['status'] }}</td>
+
+      <!-- Actions -->
+      <td class="actions">
+        <a href="{{ url_for('detail', dog_id=d['id']) }}">View</a>
+        <a href="{{ url_for('edit', dog_id=d['id']) }}">Edit</a>
+        <a href="{{ url_for('delete', dog_id=d['id']) }}"
+           onclick="return confirm('Delete this dog?');">
+          Delete
+        </a>
+      </td>
+
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if not dogs %}
+  <p>No dogs match your filters.</p>
+{% endif %}
 
 {% endblock %}
 
