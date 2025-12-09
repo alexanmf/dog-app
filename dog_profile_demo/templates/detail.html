@@ -3,74 +3,30 @@
 
 <h1>{{ dog.name }}</h1>
 
-{% if dog.image_url %}
-  <img src="{{ dog.image_url }}" alt="{{ dog.name }}"
-       style="max-width:400px; border-radius:10px; display:block; margin:16px auto;">
-{% endif %}
+<div class="dog-header">
+  {% set raw = dog.image_url %}
+  {% if raw %}
+    {% if raw.startswith('http') %}
+      {% set img_src = raw %}
+    {% else %}
+      {% set img_src = url_for('static', filename=raw) %}
+    {% endif %}
+    <img src="{{ img_src }}" alt="{{ dog.name }}">
+  {% endif %}
 
-<ul class="dog-info">
-  <li><strong>Age:</strong> {{ dog.age }}</li>
-  <li><strong>Size:</strong> {{ dog.size }}</li>
-  <li><strong>Status:</strong> {{ dog.status }}</li>
-  <li><strong>Kid friendly:</strong> {{ 'Yes' if dog.kid_friendly else 'No' }}</li>
-  <li><strong>Cat friendly:</strong> {{ 'Yes' if dog.cat_friendly else 'No' }}</li>
-  <li><strong>Dog friendly:</strong> {{ 'Yes' if dog.dog_friendly else 'No' }}</li>
-  <li><strong>Notes:</strong> {{ dog.notes }}</li>
-</ul>
+  <ul class="dog-info">
+    <li><strong>Age:</strong> {{ dog.age }}</li>
+    <li><strong>Size:</strong> {{ dog.size }}</li>
+    <li><strong>Status:</strong> {{ dog.status }}</li>
+    <li><strong>Kid friendly:</strong> {{ 'Yes' if dog.kid_friendly else 'No' }}</li>
+    <li><strong>Cat friendly:</strong> {{ 'Yes' if dog.cat_friendly else 'No' }}</li>
+    <li><strong>Dog friendly:</strong> {{ 'Yes' if dog.dog_friendly else 'No' }}</li>
+    <li><strong>Notes:</strong> {{ dog.notes }}</li>
+  </ul>
+</div>
 
-<p style="margin-top:12px;">
-  <a class="btn" href="{{ url_for('edit', dog_id=dog.id) }}">Edit</a>
-  <a class="btn" href="{{ url_for('index') }}">Back</a>
-</p>
-
-<hr>
-
-<h3>Documents</h3>
-
-{% if docs %}
-<table>
-  <thead>
-    <tr>
-      <th>Title</th>
-      <th>Type</th>
-      <th>Uploaded</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-  {% for doc in docs %}
-    <tr>
-      <td><a href="{{ doc.file_url }}" target="_blank" rel="noopener">{{ doc.title }}</a></td>
-      <td>{{ doc.content_type or 'file' }}</td>
-      <td>{{ doc.uploaded_at }}</td>
-      <td>
-        <form method="post" action="{{ url_for('delete_doc', doc_id=doc.id) }}"
-              onsubmit="return confirm('Delete this document?')">
-          <button class="btn" type="submit">Delete</button>
-        </form>
-      </td>
-    </tr>
-  {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<p>No documents uploaded yet.</p>
-{% endif %}
-
-<h4>Upload a new document</h4>
-<form method="post" action="{{ url_for('upload_doc', dog_id=dog.id) }}" enctype="multipart/form-data">
-  <div class="row">
-    <div>
-      <label>Title (optional)</label>
-      <input name="title" placeholder="e.g., Rabies Certificate">
-    </div>
-    <div>
-      <label>Choose file (pdf, doc, docx, xls, xlsx, csv, txt)</label>
-      <input type="file" name="document" required>
-    </div>
-  </div>
-  <p><button class="btn primary" type="submit">Upload Document</button></p>
-</form>
+{# … keep the rest of your documents section here … #}
 
 {% endblock %}
+
 
