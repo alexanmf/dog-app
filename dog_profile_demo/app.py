@@ -126,12 +126,15 @@ app.config["DOCS_TABLE_READY"] = False
 
 @app.before_request
 def ensure_docs_table_once():
+    # Skip DB setup for health checks
+    if request.path == "/health":
+        return
+
     if app.config["DOCS_TABLE_READY"]:
         return
 
     try:
-        execute(
-            """
+        execute("""
             CREATE TABLE IF NOT EXISTS dog_documents (
                 id SERIAL PRIMARY KEY,
                 dog_id INTEGER NOT NULL REFERENCES dogs(id) ON DELETE CASCADE,
@@ -140,12 +143,11 @@ def ensure_docs_table_once():
                 content_type TEXT,
                 uploaded_at TIMESTAMPTZ DEFAULT NOW()
             )
-            """
-        )
+        """)
         get_db().commit()
         app.config["DOCS_TABLE_READY"] = True
     except Exception as e:
-        print(f"Error creating dog_documents table: {e}")
+        print("DB ERROR:", e)
         raise
 
 
