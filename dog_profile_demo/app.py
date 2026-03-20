@@ -1,6 +1,5 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash
-from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import cloudinary
 import cloudinary.uploader
@@ -57,7 +56,16 @@ def save_image(file_storage):
     """
     Upload an image to Cloudinary and return secure_url, or None on failure.
     """
-    if not file_storage or not file_storage.filename or not allowed_image(file_storage.filename):
+    if not file_storage:
+        print("No image file received")
+        return None
+
+    if not file_storage.filename:
+        print("Image has no filename")
+        return None
+
+    if not allowed_image(file_storage.filename):
+        print(f"Invalid image type: {file_storage.filename}")
         return None
 
     try:
@@ -69,7 +77,9 @@ def save_image(file_storage):
             unique_filename=True,
             overwrite=False,
         )
-        return up.get("secure_url")
+        image_url = up.get("secure_url")
+        print(f"Image upload success: {image_url}")
+        return image_url
     except Exception as e:
         print(f"Image upload failed: {e}")
         return None
@@ -80,7 +90,16 @@ def save_document(file_storage):
     Upload a document (PDF/DOCX/etc.) to Cloudinary as raw and
     return {url, title, content_type} or None on failure.
     """
-    if not file_storage or not file_storage.filename or not allowed_doc(file_storage.filename):
+    if not file_storage:
+        print("No document file received")
+        return None
+
+    if not file_storage.filename:
+        print("Document has no filename")
+        return None
+
+    if not allowed_doc(file_storage.filename):
+        print(f"Invalid document type: {file_storage.filename}")
         return None
 
     try:
@@ -195,6 +214,9 @@ def create():
         image_url = None
 
         file = request.files.get("image")
+        print("CREATE route file:", file)
+        print("CREATE route filename:", file.filename if file else None)
+
         if file and file.filename:
             if not allowed_image(file.filename):
                 flash("Invalid image type. Use png/jpg/jpeg/gif/webp.")
@@ -218,9 +240,9 @@ def create():
                 int(form.get("age", 0) or 0),
                 form.get("size", "Medium"),
                 form.get("status", "Intake"),
-                1 if form.get("kid_friendly") else 0,
-                1 if form.get("cat_friendly") else 0,
-                1 if form.get("dog_friendly") else 0,
+                bool(form.get("kid_friendly")),
+                bool(form.get("cat_friendly")),
+                bool(form.get("dog_friendly")),
                 form.get("notes", ""),
                 image_url,
             ),
@@ -246,6 +268,9 @@ def edit(dog_id):
         image_url = dog.get("image_url")
 
         file = request.files.get("image")
+        print("EDIT route file:", file)
+        print("EDIT route filename:", file.filename if file else None)
+
         if file and file.filename:
             if not allowed_image(file.filename):
                 flash("Invalid image type. Use png/jpg/jpeg/gif/webp.")
@@ -268,9 +293,9 @@ def edit(dog_id):
                 int(form.get("age", 0) or 0),
                 form.get("size", "Medium"),
                 form.get("status", "Intake"),
-                1 if form.get("kid_friendly") else 0,
-                1 if form.get("cat_friendly") else 0,
-                1 if form.get("dog_friendly") else 0,
+                bool(form.get("kid_friendly")),
+                bool(form.get("cat_friendly")),
+                bool(form.get("dog_friendly")),
                 form.get("notes", ""),
                 image_url,
                 dog_id,
