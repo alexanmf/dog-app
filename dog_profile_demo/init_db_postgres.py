@@ -1,11 +1,6 @@
 import os
-from dotenv import load_dotenv
-
 from app import create_app
 from models import db
-
-# Load environment variables
-load_dotenv()
 
 
 def init_postgres_database():
