@@ -1,32 +1,36 @@
 import os
 from flask import Flask
 from dotenv import load_dotenv
+import cloudinary
 
-# Load environment variables
+from db import init_db
+
 load_dotenv()
 
 
 def create_app():
     app = Flask(__name__)
 
-    # ---------------------------
-    # Core Config
-    # ---------------------------
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret")
     app.config["MAX_CONTENT_LENGTH"] = int(
         os.getenv("MAX_CONTENT_LENGTH", 10 * 1024 * 1024)
     )
 
-    # ---------------------------
-    # Optional: Database URL (future use)
-    # ---------------------------
-    app.config["DATABASE_URL"] = os.getenv("DATABASE_URL")
+    database_url = os.getenv("DATABASE_URL", "").strip()
 
-    # ---------------------------
-    # Cloudinary Config
-    # ---------------------------
-    import cloudinary
+    if database_url:
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace("postgres://", "postgresql://", 1)
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+    else:
+        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///dogs.db"
 
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+    # attach SQLAlchemy to this Flask app
+    init_db(app)
+
+    # Cloudinary
     if os.getenv("CLOUDINARY_URL"):
         cloudinary.config(cloudinary_url=os.getenv("CLOUDINARY_URL"))
     else:
@@ -37,22 +41,17 @@ def create_app():
             secure=True,
         )
 
-    # ---------------------------
-    # Register Blueprints
-    # ---------------------------
-    from routes.dogs import dogs_bp
-    from routes.documents import documents_bp
-    from routes.chat import chat_bp
+    # Blueprints
     from routes.auth import auth_bp
+    from routes.chat import chat_bp
+    from routes.documents import documents_bp
+    from routes.dogs import dogs_bp
 
-    app.register_blueprint(dogs_bp)
-    app.register_blueprint(documents_bp)
-    app.register_blueprint(chat_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(chat_bp)
+    app.register_blueprint(documents_bp)
+    app.register_blueprint(dogs_bp)
 
-    # ---------------------------
-    # Health Check
-    # ---------------------------
     @app.route("/health")
     def health():
         return "ok", 200
@@ -60,13 +59,8 @@ def create_app():
     return app
 
 
-# Create app instance for Gunicorn
 app = create_app()
 
-
-# ---------------------------
-# Local Development Entry
-# ---------------------------
 if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
