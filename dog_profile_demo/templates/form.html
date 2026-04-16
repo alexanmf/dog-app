@@ -1,93 +1,146 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2>{{ 'Edit Dog' if dog else 'New Dog' }}</h2>
-
-<form method="post" enctype="multipart/form-data">
-
-  <div class="row">
-    <div>
-      <label for="name">Name</label>
-      <input id="name" name="name" required value="{{ dog.name if dog else '' }}">
-    </div>
-
-    <div>
-      <label for="age">Age (years)</label>
-      <input id="age" type="number" min="0" name="age" value="{{ dog.age if dog else 0 }}">
-    </div>
-
-    <div>
-      <label for="size">Size</label>
-      <select id="size" name="size">
-        {% for s in ["Small","Medium","Large"] %}
-          <option value="{{ s }}" {% if dog and dog.size==s %}selected{% endif %}>{{ s }}</option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div>
-      <label for="status">Status</label>
-      <select id="status" name="status">
-        {% for s in ["Intake","Fostered","Hold","Adopted","Transferred"] %}
-          <option value="{{ s }}" {% if dog and dog.status==s %}selected{% endif %}>{{ s }}</option>
-        {% endfor %}
-      </select>
-    </div>
+<div class="top-bar">
+  <div>
+    <h2>{{ 'Edit Dog' if dog else 'New Dog' }}</h2>
+    <p class="muted">
+      {{ 'Update this dog’s profile information.' if dog else 'Create a new dog profile.' }}
+    </p>
   </div>
+</div>
 
-  <div class="row">
-    <div>
-      <label>
-        <input type="checkbox" name="kid_friendly" {% if dog and dog.kid_friendly %}checked{% endif %}>
-        Kid friendly
-      </label>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
     </div>
-    <div>
-      <label>
-        <input type="checkbox" name="cat_friendly" {% if dog and dog.cat_friendly %}checked{% endif %}>
-        Cat friendly
-      </label>
-    </div>
-    <div>
-      <label>
-        <input type="checkbox" name="dog_friendly" {% if dog and dog.dog_friendly %}checked{% endif %}>
-        Dog friendly
-      </label>
-    </div>
-  </div>
+  {% endif %}
+{% endwith %}
 
-  <div class="row full">
-    <div>
-      <label for="notes">Notes</label>
-      <textarea id="notes" name="notes" rows="6">{{ dog.notes if dog else '' }}</textarea>
-    </div>
-  </div>
+<div class="card">
+  <form method="POST" enctype="multipart/form-data" class="stack">
 
-  <div class="row full">
-    <div>
-      <label for="image">Photo</label>
-      <input id="image" type="file" name="image" accept="image/png,image/jpeg,image/gif,image/webp">
-      {% if dog and dog.image_url %}
-        {% set raw = dog.image_url %}
-        {% if raw.startswith('http') %}
-          {% set preview_src = raw %}
-        {% else %}
-          {% set preview_src = url_for('static', filename=raw) %}
-        {% endif %}
-        <div style="margin-top: 8px;">
-          <img src="{{ preview_src }}" alt="{{ dog.name }}" style="max-height:150px; border-radius:8px;">
+    <div class="row">
+      <div class="field">
+        <label for="name">Name</label>
+        <input
+          id="name"
+          type="text"
+          name="name"
+          required
+          value="{{ dog.name if dog else '' }}"
+        >
+      </div>
+
+      <div class="field">
+        <label for="breed">Breed</label>
+        <input
+          id="breed"
+          type="text"
+          name="breed"
+          value="{{ dog.breed if dog else '' }}"
+          placeholder="Labrador Mix"
+        >
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label for="age">Age</label>
+        <input
+          id="age"
+          type="text"
+          name="age"
+          value="{{ dog.age if dog else '' }}"
+          placeholder="2 years"
+        >
+      </div>
+
+      <div class="field">
+        <label for="size">Size</label>
+        <select id="size" name="size">
+          <option value="">Select size</option>
+          {% for s in ["Small", "Medium", "Large"] %}
+            <option value="{{ s }}" {% if dog and dog.size == s %}selected{% endif %}>
+              {{ s }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label for="friendliness">Friendliness</label>
+        <input
+          id="friendliness"
+          type="text"
+          name="friendliness"
+          value="{{ dog.friendliness if dog else '' }}"
+          placeholder="Friendly with kids, shy at first, good with dogs"
+        >
+      </div>
+
+      <div class="field">
+        <label for="status">Status</label>
+        <select id="status" name="status">
+          {% for s in ["Available", "Intake", "Fostered", "Hold", "Adopted", "Transferred"] %}
+            <option value="{{ s }}" {% if dog and dog.status == s %}selected{% elif not dog and s == "Available" %}selected{% endif %}>
+              {{ s }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="row full">
+      <div class="field">
+        <label for="image_url">Image URL</label>
+        <input
+          id="image_url"
+          type="text"
+          name="image_url"
+          value="{{ dog.image_url if dog else '' }}"
+          placeholder="https://example.com/dog-photo.jpg"
+        >
+        <p class="muted">Paste an image link for now. This matches your current Dog model.</p>
+      </div>
+    </div>
+
+    {% if dog and dog.image_url %}
+      {% if dog.image_url.startswith('http') %}
+        {% set preview_src = dog.image_url %}
+      {% else %}
+        {% set preview_src = url_for('static', filename=dog.image_url) %}
+      {% endif %}
+
+      <div class="row full">
+        <div class="field">
+          <label>Current Photo</label>
+          <img
+            src="{{ preview_src }}"
+            alt="{{ dog.name }}"
+            style="max-height: 180px; width: auto; border-radius: 10px; border: 1px solid #ddd;"
+          >
         </div>
+      </div>
+    {% endif %}
+
+    <div>
+      <button class="btn primary" type="submit">Save</button>
+
+      {% if dog %}
+        <a class="btn" href="{{ url_for('dogs.dog_detail', dog_id=dog.id) }}">Cancel</a>
+      {% else %}
+        <a class="btn" href="{{ url_for('dogs.index') }}">Cancel</a>
       {% endif %}
     </div>
-  </div>
 
-  <p>
-    <button class="btn primary" type="submit">Save</button>
-    <a class="btn" href="{{ url_for('index') }}">Cancel</a>
-  </p>
-
-</form>
+  </form>
+</div>
 
 {% endblock %}
-
 
