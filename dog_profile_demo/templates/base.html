@@ -9,28 +9,39 @@
   </head>
   <body>
     <header>
-      <a class="title" href="{{ url_for('index') }}">Dog Profile Demo</a>
-      <nav>
-        <a class="btn" href="{{ url_for('index') }}">All Dogs</a>
-        <a class="btn primary" href="{{ url_for('create') }}">+ New Dog</a>
+      <a class="title" href="{{ url_for('dogs.index') }}">Dog Profile Demo</a>
+
+      <nav class="top-nav">
+        <a class="btn" href="{{ url_for('dogs.index') }}">All Dogs</a>
+
+        {% if session.get("role") in ["admin", "coordinator", "staff"] %}
+          <a class="btn primary" href="{{ url_for('dogs.add_dog') }}">+ New Dog</a>
+        {% endif %}
+
+        {% if session.get("username") %}
+          <a class="btn" href="{{ url_for('auth.logout') }}">Logout</a>
+        {% else %}
+          <a class="btn" href="{{ url_for('auth.login') }}">Login</a>
+          <a class="btn" href="{{ url_for('auth.register') }}">Register</a>
+        {% endif %}
       </nav>
     </header>
 
     <div class="container">
-      {% with messages = get_flashed_messages() %}
+      {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-          <ul class="flash" role="status" aria-live="polite">
-            {% for m in messages %}
-              <li>{{ m }}</li>
+          <div class="flash-messages" role="status" aria-live="polite">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
             {% endfor %}
-          </ul>
+          </div>
         {% endif %}
       {% endwith %}
 
       {% block content %}{% endblock %}
     </div>
 
-    <footer>Demo app for class — Flask + SQLite</footer>
+    <footer>Dog Profile and Record Database — Flask + SQLAlchemy</footer>
 
     {% block scripts %}{% endblock %}
   </body>
