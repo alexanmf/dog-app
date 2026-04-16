@@ -1,62 +1,43 @@
-# Dog Profile Demo (Flask + SQLite)
+# 🐶 Dog Profile & Record Database (Flask App)
 
-A tiny web app to demonstrate:
-- Python (Flask)
-- SQLite database (view/edit with DB Browser for SQLite)
-- Git for version control
+A web application for managing dog profiles, documents, and communication in a shelter or foster environment.
 
-## Quickstart
+This project started as a simple Flask + SQLite demo and has been expanded into a more complete system with authentication, file uploads, and role-based access.
 
-1) Create and activate a virtual environment (Windows PowerShell shown; adjust for Mac/Linux):
-```
-python -m venv .venv
-.\.venv\Scripts\activate
-```
-Mac/Linux:
-```
-python3 -m venv .venv
-source .venv/bin/activate
-```
+---
 
-2) Install dependencies:
-```
-pip install -r requirements.txt
-```
+## 🚀 Features
 
-3) Initialize the database (creates `dogs.db` with sample data):
-```
-python init_db.py
-```
+- 🐕 Dog profile management (create, edit, delete)
+- 🔍 Search and filtering (name, size, status)
+- 📄 Document uploads (vet records, intake forms, etc.)
+- 💬 Per-dog chat / notes system
+- 🔐 User authentication (login/register)
+- 🧑‍⚖️ Role-based permissions:
+  - Admin
+  - Coordinator
+  - Staff
+  - Foster
+- 🗂 Organized project structure (routes + services)
+- ☁️ Ready for cloud storage (Cloudinary / S3)
+- 🧪 SQLite (local) or PostgreSQL (production-ready)
 
-4) Run the app:
-```
-python app.py
-```
-Visit http://127.0.0.1:5000
+---
 
-## What to Try
+## 🛠 Tech Stack
 
-- Create a new dog profile (top-right button).
-- Edit a dog, toggle friendly flags, change status.
-- Use the search box and filter dropdowns.
-- Open `dogs.db` in **DB Browser for SQLite** to see tables/rows change in real time.
-- Use **Git** to track changes:
-```
-git init
-git add .
-git commit -m "Initial commit: Flask + SQLite dog demo"
-```
+- **Backend:** Flask (Python)
+- **Database:** SQLite (dev) / PostgreSQL (optional)
+- **ORM:** SQLAlchemy
+- **Auth:** Session-based authentication
+- **Storage:** Local (dev) + Cloudinary-ready
+- **Frontend:** HTML + CSS (custom)
 
-## Files
+---
 
-- `app.py` – Flask routes + app setup
-- `db.py` – helper for opening SQLite connection
-- `init_db.py` – creates tables and seeds sample data
-- `schema.sql` – SQL schema used by `init_db.py`
-- `templates/` – HTML templates
-- `static/styles.css` – minimal styling
-- `requirements.txt` – Python dependencies
+## ⚙️ Quickstart
 
-## Notes
-
-This is a simple scaffold intended for a school assignment. It **does not** include authentication or advanced security.
+### 1. Clone the repo
+```bash
+git clone <your-repo-url>
+cd dog_profile_demo
