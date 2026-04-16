@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Document</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 14px;
+            cursor: pointer;
+        }
+
+        .top-bar {
+            margin-bottom: 20px;
+        }
+
+        .small {
+            color: gray;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="top-bar">
+        {% if session.get("username") %}
+            Logged in as <strong>{{ session.get("username") }}</strong>
+            ({{ session.get("role") }})
+            | <a href="{{ url_for('auth.logout') }}">Logout</a>
+        {% else %}
+            <a href="{{ url_for('auth.login') }}">Login</a>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h1>Upload Document for {{ dog.name }}</h1>
+        <p class="small">Attach records like vet forms, intake paperwork, adoption forms, or notes.</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <p><strong>{{ category.title() }}:</strong> {{ message }}</p>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST"
+              action="{{ url_for('documents.upload_document', dog_id=dog.id) }}"
+              enctype="multipart/form-data">
+
+            <label for="document">Choose File</label>
+            <input type="file" name="document" id="document" required>
+
+            <label for="document_type">Document Type</label>
+            <select name="document_type" id="document_type">
+                <option value="">-- Select Type --</option>
+                <option value="Vet Record">Vet Record</option>
+                <option value="Vaccination Record">Vaccination Record</option>
+                <option value="Intake Form">Intake Form</option>
+                <option value="Adoption Form">Adoption Form</option>
+                <option value="Behavior Notes">Behavior Notes</option>
+                <option value="Foster Agreement">Foster Agreement</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <label for="notes">Notes</label>
+            <textarea name="notes" id="notes" rows="5" placeholder="Add any helpful notes about this document..."></textarea>
+
+            <button type="submit">Upload Document</button>
+        </form>
+
+        <br>
+        <a href="{{ url_for('dogs.dog_detail', dog_id=dog.id) }}">← Back to {{ dog.name }}</a>
+    </div>
+
+</div>
+
+</body>
+</html>
