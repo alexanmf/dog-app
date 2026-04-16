@@ -20,17 +20,18 @@ def create_app():
 
     if database_url:
         if database_url.startswith("postgres://"):
-            database_url = database_url.replace("postgres://", "postgresql://", 1)
+            database_url = database_url.replace("postgres://", "postgresql+psycopg://", 1)
+        elif database_url.startswith("postgresql://"):
+            database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+
         app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     else:
         app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///dogs.db"
 
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-    # attach SQLAlchemy to this Flask app
     init_db(app)
 
-    # Cloudinary
     if os.getenv("CLOUDINARY_URL"):
         cloudinary.config(cloudinary_url=os.getenv("CLOUDINARY_URL"))
     else:
@@ -41,7 +42,6 @@ def create_app():
             secure=True,
         )
 
-    # Blueprints
     from routes.auth import auth_bp
     from routes.chat import chat_bp
     from routes.documents import documents_bp
@@ -67,6 +67,4 @@ if __name__ == "__main__":
         port=int(os.getenv("PORT", 5000)),
         debug=os.getenv("DEBUG", "True") == "True",
     )
-
-
 
