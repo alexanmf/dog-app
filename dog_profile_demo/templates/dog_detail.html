@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ dog.name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        img {
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        form {
+            margin-top: 10px;
+        }
+
+        textarea {
+            width: 100%;
+        }
+
+        input, select, textarea {
+            padding: 6px;
+            margin-top: 4px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .message-box {
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+        }
+
+        .small {
+            font-size: 0.85em;
+            color: gray;
+        }
+
+        .top-bar {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Top bar (auth info) -->
+    <div class="top-bar">
+        {% if session.get("username") %}
+            Logged in as <strong>{{ session.get("username") }}</strong>
+            ({{ session.get("role") }})
+            | <a href="{{ url_for('auth.logout') }}">Logout</a>
+        {% else %}
+            <a href="{{ url_for('auth.login') }}">Login</a>
+        {% endif %}
+    </div>
+
+    <!-- Dog Info -->
+    <div class="card">
+        <h1>{{ dog.name }}</h1>
+
+        {% if dog.image_url %}
+            <img src="{{ dog.image_url }}" alt="{{ dog.name }}" width="250">
+        {% endif %}
+
+        <p><strong>Breed:</strong> {{ dog.breed or 'N/A' }}</p>
+        <p><strong>Age:</strong> {{ dog.age or 'N/A' }}</p>
+        <p><strong>Size:</strong> {{ dog.size or 'N/A' }}</p>
+        <p><strong>Friendliness:</strong> {{ dog.friendliness or 'N/A' }}</p>
+        <p><strong>Status:</strong> {{ dog.status or 'N/A' }}</p>
+
+        <a href="{{ url_for('dogs.edit_dog', dog_id=dog.id) }}">Edit</a>
+
+        <form method="POST"
+              action="{{ url_for('dogs.delete_dog', dog_id=dog.id) }}"
+              style="display:inline;">
+            <button onclick="return confirm('Delete this dog?')">Delete</button>
+        </form>
+    </div>
+
+    <!-- Documents Section -->
+    <div class="card">
+        <h2>Documents</h2>
+
+        <!-- Upload Form -->
+        <form method="POST"
+              action="{{ url_for('documents.upload_document', dog_id=dog.id) }}"
+              enctype="multipart/form-data">
+
+            <label>File:</label><br>
+            <input type="file" name="document" required><br>
+
+            <label>Type:</label><br>
+            <input type="text" name="document_type" placeholder="Vet Record, Intake Form"><br>
+
+            <label>Notes:</label><br>
+            <textarea name="notes"></textarea><br>
+
+            <button type="submit">Upload Document</button>
+        </form>
+
+        <hr>
+
+        <!-- Document List -->
+        {% if documents %}
+            {% for doc in documents %}
+                <div>
+                    <a href="{{ doc.file_url }}" target="_blank">
+                        {{ doc.filename }}
+                    </a>
+
+                    {% if doc.document_type %}
+                        - {{ doc.document_type }}
+                    {% endif %}
+
+                    {% if doc.notes %}
+                        <div class="small">{{ doc.notes }}</div>
+                    {% endif %}
+
+                    {% if doc.uploaded_by_name %}
+                        <div class="small">
+                            Uploaded by {{ doc.uploaded_by_name }}
+                        </div>
+                    {% endif %}
+
+                    <form method="POST"
+                          action="{{ url_for('documents.delete_document', document_id=doc.id) }}"
+                          style="display:inline;">
+                        <button onclick="return confirm('Delete document?')">
+                            Delete
+                        </button>
+                    </form>
+                </div>
+                <hr>
+            {% endfor %}
+        {% else %}
+            <p>No documents uploaded yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- Chat Section -->
+    <div class="card">
+        <h2>Chat / Notes</h2>
+
+        <!-- Message Form -->
+        <form method="POST"
+              action="{{ url_for('chat.add_message', dog_id=dog.id) }}">
+
+            <textarea name="message" rows="3" placeholder="Write a message..." required></textarea><br>
+
+            <button type="submit">Post Message</button>
+        </form>
+
+        <hr>
+
+        <!-- Messages List -->
+        {% if messages %}
+            {% for msg in messages %}
+                <div class="message-box">
+                    <strong>{{ msg.sender_name or "Anonymous" }}</strong>
+
+                    {% if msg.sender_role %}
+                        ({{ msg.sender_role }})
+                    {% endif %}
+
+                    <div>{{ msg.message }}</div>
+
+                    <div class="small">
+                        {{ msg.created_at.strftime('%Y-%m-%d %H:%M') }}
+                    </div>
+
+                    <form method="POST"
+                          action="{{ url_for('chat.delete_message', message_id=msg.id) }}"
+                          style="display:inline;">
+                        <button onclick="return confirm('Delete message?')">
+                            Delete
+                        </button>
+                    </form>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No messages yet.</p>
+        {% endif %}
+    </div>
+
+    <a href="{{ url_for('dogs.index') }}">← Back to Home</a>
+
+</div>
+
+</body>
+</html>
