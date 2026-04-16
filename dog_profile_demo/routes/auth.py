@@ -12,14 +12,17 @@ def register():
     Register a new user.
     Good for testing and small internal apps.
     """
+    if "user_id" in session:
+        return redirect(url_for("dogs.index"))
+
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
+        username = request.form.get("username", "").strip().lower()
         password = request.form.get("password", "").strip()
         confirm_password = request.form.get("confirm_password", "").strip()
         role = request.form.get("role", "staff").strip().lower()
 
-        if not username or not password:
-            flash("Username and password are required.", "error")
+        if not username or not password or not confirm_password:
+            flash("Username, password, and confirm password are required.", "error")
             return redirect(url_for("auth.register"))
 
         if password != confirm_password:
@@ -61,8 +64,11 @@ def login():
     """
     Log a user in by saving basic user info into the session.
     """
+    if "user_id" in session:
+        return redirect(url_for("dogs.index"))
+
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
+        username = request.form.get("username", "").strip().lower()
         password = request.form.get("password", "").strip()
 
         if not username or not password:
@@ -72,6 +78,7 @@ def login():
         user = User.query.filter_by(username=username).first()
 
         if user and check_password_hash(user.password_hash, password):
+            session.clear()
             session["user_id"] = user.id
             session["username"] = user.username
             session["role"] = user.role
