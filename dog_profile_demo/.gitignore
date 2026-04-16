@@ -1,4 +1,6 @@
-# --- Python bytecode / caches ---
+# ---------------------------------------
+# Python bytecode / caches
+# ---------------------------------------
 __pycache__/
 *.py[cod]
 *$py.class
@@ -7,26 +9,34 @@ __pycache__/
 .ruff_cache/
 .ipynb_checkpoints/
 
-# --- Virtual envs ---
+# ---------------------------------------
+# Virtual environments
+# ---------------------------------------
 .venv/
 venv/
 env/
 
-# --- Local databases / state ---
+# ---------------------------------------
+# Local databases / state
+# ---------------------------------------
 *.sqlite
 *.sqlite3
-dogs.db
-instance/
 *.db
 *.db-journal
+dogs.db
+instance/
 
-# --- Environment / secrets (never commit real values) ---
+# ---------------------------------------
+# Environment / secrets (DO NOT COMMIT)
+# ---------------------------------------
 .env
 *.env
-.env.*.local
+.env.*
 .envrc
 
-# --- Logs / coverage / reports ---
+# ---------------------------------------
+# Logs / coverage / reports
+# ---------------------------------------
 logs/
 *.log
 coverage/
@@ -34,7 +44,9 @@ coverage/
 .coverage.*
 htmlcov/
 
-# --- Build / tooling artifacts ---
+# ---------------------------------------
+# Build / packaging artifacts
+# ---------------------------------------
 dist/
 build/
 .eggs/
@@ -42,18 +54,24 @@ build/
 .cache/
 pip-wheel-metadata/
 
-# --- Uploads & generated media (store in S3/Cloudinary, not Git) ---
+# ---------------------------------------
+# Uploads & generated media
+# (Do NOT store user uploads in Git)
+# ---------------------------------------
 uploads/
 media/
 user_uploads/
+static/uploads/
 
-# Keep folder structure but ignore contents:
-# (create these files so empty dirs exist in repo)
+# Keep folder structure (optional)
 !uploads/.gitkeep
 !media/.gitkeep
 !user_uploads/.gitkeep
+!static/uploads/.gitkeep
 
-# --- Frontend (if you add one later) ---
+# ---------------------------------------
+# Node / frontend (future-proofing)
+# ---------------------------------------
 node_modules/
 npm-debug.log*
 yarn*.log
@@ -63,12 +81,22 @@ pnpm-*.log
 .svelte-kit/
 *.map
 
-# --- OS / Editors ---
+# ---------------------------------------
+# OS / Editors
+# ---------------------------------------
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
 
-# --- Docker / Compose (optional) ---
+# ---------------------------------------
+# Flask / runtime
+# ---------------------------------------
+flask_session/
 *.pid
 tmp/
+
+# ---------------------------------------
+# Docker / deployment (optional)
+# ---------------------------------------
+*.pid.lock
