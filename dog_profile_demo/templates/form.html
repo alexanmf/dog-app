@@ -10,16 +10,6 @@
   </div>
 </div>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    <div class="flash-messages">
-      {% for category, message in messages %}
-        <div class="flash {{ category }}">{{ message }}</div>
-      {% endfor %}
-    </div>
-  {% endif %}
-{% endwith %}
-
 <div class="card">
   <form method="POST" enctype="multipart/form-data" class="stack">
 
@@ -98,15 +88,14 @@
 
     <div class="row full">
       <div class="field">
-        <label for="image_url">Image URL</label>
+        <label for="image">Dog Photo</label>
         <input
-          id="image_url"
-          type="text"
-          name="image_url"
-          value="{{ dog.image_url if dog else '' }}"
-          placeholder="https://example.com/dog-photo.jpg"
+          id="image"
+          type="file"
+          name="image"
+          accept=".png,.jpg,.jpeg,.gif,.webp"
         >
-        <p class="muted">Paste an image link for now. This matches your current Dog model.</p>
+        <p class="muted">Upload a photo file instead of pasting an image URL.</p>
       </div>
     </div>
 
@@ -139,6 +128,10 @@
       {% endif %}
     </div>
 
+  </form>
+</div>
+
+{% endblock %}
   </form>
 </div>
 
