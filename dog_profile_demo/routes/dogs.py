@@ -1,32 +1,27 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from models import db, Dog, Document, DogMessage
+from services.permissions import login_required, roles_required
 
 dogs_bp = Blueprint("dogs", __name__)
 
 
 @dogs_bp.route("/")
+@login_required
 def index():
-    """
-    Show all dogs on the homepage.
-    """
     dogs = Dog.query.order_by(Dog.created_at.desc()).all()
     return render_template("index.html", dogs=dogs)
 
 
 @dogs_bp.route("/dogs")
+@login_required
 def list_dogs():
-    """
-    Optional separate route for listing dogs.
-    """
     dogs = Dog.query.order_by(Dog.created_at.desc()).all()
     return render_template("index.html", dogs=dogs)
 
 
 @dogs_bp.route("/dog/<int:dog_id>")
+@login_required
 def dog_detail(dog_id):
-    """
-    Show a single dog's profile page, including documents and messages.
-    """
     dog = Dog.query.get_or_404(dog_id)
 
     documents = Document.query.filter_by(dog_id=dog_id).order_by(Document.uploaded_at.desc()).all()
@@ -41,10 +36,9 @@ def dog_detail(dog_id):
 
 
 @dogs_bp.route("/dog/add", methods=["GET", "POST"])
+@login_required
+@roles_required("admin", "coordinator", "staff")
 def add_dog():
-    """
-    Add a new dog.
-    """
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         breed = request.form.get("breed", "").strip()
@@ -78,14 +72,13 @@ def add_dog():
             flash(f"Error adding dog: {str(e)}", "error")
             return redirect(url_for("dogs.add_dog"))
 
-    return render_template("add_dog.html")
+    return render_template("form.html", dog=None)
 
 
 @dogs_bp.route("/dog/<int:dog_id>/edit", methods=["GET", "POST"])
+@login_required
+@roles_required("admin", "coordinator", "staff")
 def edit_dog(dog_id):
-    """
-    Edit an existing dog.
-    """
     dog = Dog.query.get_or_404(dog_id)
 
     if request.method == "POST":
@@ -110,14 +103,13 @@ def edit_dog(dog_id):
             flash(f"Error updating dog: {str(e)}", "error")
             return redirect(url_for("dogs.edit_dog", dog_id=dog.id))
 
-    return render_template("edit_dog.html", dog=dog)
+    return render_template("form.html", dog=dog)
 
 
 @dogs_bp.route("/dog/<int:dog_id>/delete", methods=["POST"])
+@login_required
+@roles_required("admin", "coordinator")
 def delete_dog(dog_id):
-    """
-    Delete a dog.
-    """
     dog = Dog.query.get_or_404(dog_id)
 
     try:
