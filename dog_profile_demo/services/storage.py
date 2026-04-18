@@ -1,34 +1,37 @@
 import os
 import uuid
+import cloudinary.uploader
 from werkzeug.utils import secure_filename
 
 
 ALLOWED_EXTENSIONS = {
-    "pdf", "doc", "docx", "png", "jpg", "jpeg", "txt"
+    "pdf", "doc", "docx", "png", "jpg", "jpeg", "txt", "gif", "webp"
+}
+
+ALLOWED_IMAGE_EXTENSIONS = {
+    "png", "jpg", "jpeg", "gif", "webp"
 }
 
 
 def allowed_file(filename):
-    """
-    Return True if the filename has an allowed extension.
-    """
     return (
         "." in filename
         and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
     )
 
 
+def allowed_image(filename):
+    return (
+        "." in filename
+        and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
+    )
+
+
 def ensure_folder_exists(folder_path):
-    """
-    Create the folder if it does not already exist.
-    """
     os.makedirs(folder_path, exist_ok=True)
 
 
 def generate_unique_filename(filename):
-    """
-    Create a unique, secure filename while preserving the original extension.
-    """
     safe_name = secure_filename(filename)
     ext = safe_name.rsplit(".", 1)[1].lower()
     unique_name = f"{uuid.uuid4().hex}.{ext}"
@@ -36,14 +39,6 @@ def generate_unique_filename(filename):
 
 
 def save_uploaded_file(file, upload_folder):
-    """
-    Save an uploaded file locally.
-
-    Returns a dictionary with:
-    - original_filename
-    - stored_filename
-    - file_path
-    """
     if not file or file.filename == "":
         raise ValueError("No file selected.")
 
@@ -65,9 +60,6 @@ def save_uploaded_file(file, upload_folder):
 
 
 def delete_local_file(file_path):
-    """
-    Delete a local file if it exists.
-    """
     if file_path and os.path.exists(file_path):
         os.remove(file_path)
         return True
@@ -75,10 +67,26 @@ def delete_local_file(file_path):
 
 
 def relative_static_file_url(stored_filename, subfolder="uploads/documents"):
-    """
-    Build a relative static URL path for a saved file.
-
-    Example output:
-    /static/uploads/documents/abc123.pdf
-    """
     return f"/static/{subfolder}/{stored_filename}"
+
+
+def upload_image_to_cloudinary(file):
+    """
+    Upload a dog photo to Cloudinary and return the image URL.
+    """
+    if not file or file.filename == "":
+        return None
+
+    if not allowed_image(file.filename):
+        raise ValueError("Invalid image type. Allowed: png, jpg, jpeg, gif, webp.")
+
+    result = cloudinary.uploader.upload(
+        file,
+        folder=os.getenv("CLOUDINARY_FOLDER", "dogs/images"),
+        resource_type="image",
+        use_filename=True,
+        unique_filename=True,
+        overwrite=False
+    )
+
+    return result.get("secure_url")
