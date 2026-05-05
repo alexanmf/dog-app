@@ -12,8 +12,8 @@ def index():
     q = request.args.get("q", "").strip()
     status = request.args.get("status", "").strip()
     size = request.args.get("size", "").strip()
-    friendliness = request.args.get("friendliness", "").strip()
     breed = request.args.get("breed", "").strip()
+    friendliness = request.args.get("friendliness", "").strip()
 
     query = Dog.query
 
@@ -32,23 +32,49 @@ def index():
     if size:
         query = query.filter(Dog.size == size)
 
-    if friendliness:
-        query = query.filter(Dog.friendliness.ilike(f"%{friendliness}%"))
-
     if breed:
         query = query.filter(Dog.breed.ilike(f"%{breed}%"))
 
+    if friendliness:
+        query = query.filter(Dog.friendliness.ilike(f"%{friendliness}%"))
+
     dogs = query.order_by(Dog.created_at.desc()).all()
+    return render_template("index.html", dogs=dogs)
+
+
+@dogs_bp.route("/dogs")
+@login_required
+def list_dogs():
+    return redirect(url_for("dogs.index"))
+
+
+@dogs_bp.route("/dog/<int:dog_id>")
+@login_required
+def dog_detail(dog_id):
+    dog = Dog.query.get_or_404(dog_id)
+
+    documents = Document.query.filter_by(dog_id=dog_id).order_by(Document.uploaded_at.desc()).all()
+    messages = DogMessage.query.filter_by(dog_id=dog_id).order_by(DogMessage.created_at.asc()).all()
 
     return render_template(
-        "index.html",
-        dogs=dogs,
-        q=q,
-        status=status,
-        size=size,
-        friendliness=friendliness,
-        breed=breed
+        "dog_detail.html",
+        dog=dog,
+        documents=documents,
+        messages=messages
     )
+
+
+@dogs_bp.route("/dog/add", methods=["GET", "POST"])
+@login_required
+@roles_required("admin", "coordinator", "staff")
+def add_dog():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        breed = request.form.get("breed", "").strip()
+        age = request.form.get("age", "").strip()
+        size = request.form.get("size", "").strip()
+        friendliness = request.form.get("friendliness", "").strip()
+        status = request.form.get("status", "").strip()
 
         image_file = request.files.get("image")
         image_url = None
