@@ -14,18 +14,19 @@
 
 <div class="card">
   <form method="GET" action="{{ url_for('dogs.index') }}" class="filters">
-    <div>
+
+    <div class="field">
       <label for="q">Search</label>
       <input
         type="text"
         id="q"
         name="q"
-        placeholder="Search by name, breed, or friendliness..."
+        placeholder="Search name, breed, or friendliness..."
         value="{{ request.args.get('q', '') }}"
       >
     </div>
 
-    <div>
+    <div class="field">
       <label for="status">Status</label>
       <select name="status" id="status">
         <option value="">Any status</option>
@@ -37,7 +38,7 @@
       </select>
     </div>
 
-    <div>
+    <div class="field">
       <label for="size">Size</label>
       <select name="size" id="size">
         <option value="">Any size</option>
@@ -49,23 +50,42 @@
       </select>
     </div>
 
-    <div>
-      <button class="btn" type="submit">Filter</button>
+    <div class="field">
+      <label for="breed">Breed</label>
+      <input
+        type="text"
+        id="breed"
+        name="breed"
+        placeholder="Breed contains..."
+        value="{{ request.args.get('breed', '') }}"
+      >
     </div>
+
+    <div class="field">
+      <label for="friendliness">Friendliness</label>
+      <input
+        type="text"
+        id="friendliness"
+        name="friendliness"
+        placeholder="kids, cats, dogs, shy..."
+        value="{{ request.args.get('friendliness', '') }}"
+      >
+    </div>
+
+    <div class="field">
+      <label>&nbsp;</label>
+      <button class="btn primary" type="submit">Apply Filters</button>
+      <a class="btn" href="{{ url_for('dogs.index') }}">Clear</a>
+    </div>
+
   </form>
 </div>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    <div class="flash-messages">
-      {% for category, message in messages %}
-        <div class="flash {{ category }}">{{ message }}</div>
-      {% endfor %}
-    </div>
-  {% endif %}
-{% endwith %}
-
 {% if dogs %}
+  <p class="muted">
+    Showing {{ dogs|length }} dog{{ '' if dogs|length == 1 else 's' }}.
+  </p>
+
   <div class="table-wrap">
     <table>
       <thead>
@@ -169,11 +189,12 @@
       </tbody>
     </table>
   </div>
+
 {% else %}
   <div class="card">
     <p>No dogs match your filters.</p>
+    <a class="btn" href="{{ url_for('dogs.index') }}">Clear Filters</a>
   </div>
 {% endif %}
 
 {% endblock %}
-
