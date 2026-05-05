@@ -9,44 +9,46 @@ dogs_bp = Blueprint("dogs", __name__)
 @dogs_bp.route("/")
 @login_required
 def index():
-    dogs = Dog.query.order_by(Dog.created_at.desc()).all()
-    return render_template("index.html", dogs=dogs)
+    q = request.args.get("q", "").strip()
+    status = request.args.get("status", "").strip()
+    size = request.args.get("size", "").strip()
+    friendliness = request.args.get("friendliness", "").strip()
+    breed = request.args.get("breed", "").strip()
 
+    query = Dog.query
 
-@dogs_bp.route("/dogs")
-@login_required
-def list_dogs():
-    dogs = Dog.query.order_by(Dog.created_at.desc()).all()
-    return render_template("index.html", dogs=dogs)
+    if q:
+        query = query.filter(
+            db.or_(
+                Dog.name.ilike(f"%{q}%"),
+                Dog.breed.ilike(f"%{q}%"),
+                Dog.friendliness.ilike(f"%{q}%")
+            )
+        )
 
+    if status:
+        query = query.filter(Dog.status == status)
 
-@dogs_bp.route("/dog/<int:dog_id>")
-@login_required
-def dog_detail(dog_id):
-    dog = Dog.query.get_or_404(dog_id)
+    if size:
+        query = query.filter(Dog.size == size)
 
-    documents = Document.query.filter_by(dog_id=dog_id).order_by(Document.uploaded_at.desc()).all()
-    messages = DogMessage.query.filter_by(dog_id=dog_id).order_by(DogMessage.created_at.asc()).all()
+    if friendliness:
+        query = query.filter(Dog.friendliness.ilike(f"%{friendliness}%"))
+
+    if breed:
+        query = query.filter(Dog.breed.ilike(f"%{breed}%"))
+
+    dogs = query.order_by(Dog.created_at.desc()).all()
 
     return render_template(
-        "dog_detail.html",
-        dog=dog,
-        documents=documents,
-        messages=messages
+        "index.html",
+        dogs=dogs,
+        q=q,
+        status=status,
+        size=size,
+        friendliness=friendliness,
+        breed=breed
     )
-
-
-@dogs_bp.route("/dog/add", methods=["GET", "POST"])
-@login_required
-@roles_required("admin", "coordinator", "staff")
-def add_dog():
-    if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        breed = request.form.get("breed", "").strip()
-        age = request.form.get("age", "").strip()
-        size = request.form.get("size", "").strip()
-        friendliness = request.form.get("friendliness", "").strip()
-        status = request.form.get("status", "").strip()
 
         image_file = request.files.get("image")
         image_url = None
