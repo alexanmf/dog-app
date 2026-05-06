@@ -9,6 +9,7 @@ dogs_bp = Blueprint("dogs", __name__)
 @dogs_bp.route("/")
 @login_required
 def index():
+
     q = request.args.get("q", "").strip()
     status = request.args.get("status", "").strip()
     size = request.args.get("size", "").strip()
@@ -17,6 +18,7 @@ def index():
 
     query = Dog.query
 
+    # Search filters
     if q:
         query = query.filter(
             db.or_(
@@ -36,10 +38,30 @@ def index():
         query = query.filter(Dog.breed.ilike(f"%{breed}%"))
 
     if friendliness:
-        query = query.filter(Dog.friendliness.ilike(f"%{friendliness}%"))
+        query = query.filter(
+            Dog.friendliness.ilike(f"%{friendliness}%")
+        )
 
     dogs = query.order_by(Dog.created_at.desc()).all()
-    return render_template("index.html", dogs=dogs)
+
+    # Dashboard counts
+    total_dogs = Dog.query.count()
+
+    available_dogs = Dog.query.filter(
+        Dog.status.in_(["Available", "Intake", "Fostered", "Hold"])
+    ).count()
+
+    adopted_dogs = Dog.query.filter_by(
+        status="Adopted"
+    ).count()
+
+    return render_template(
+        "index.html",
+        dogs=dogs,
+        total_dogs=total_dogs,
+        available_dogs=available_dogs,
+        adopted_dogs=adopted_dogs
+    )
 
 
 @dogs_bp.route("/dogs")
@@ -51,10 +73,20 @@ def list_dogs():
 @dogs_bp.route("/dog/<int:dog_id>")
 @login_required
 def dog_detail(dog_id):
+
     dog = Dog.query.get_or_404(dog_id)
 
-    documents = Document.query.filter_by(dog_id=dog_id).order_by(Document.uploaded_at.desc()).all()
-    messages = DogMessage.query.filter_by(dog_id=dog_id).order_by(DogMessage.created_at.asc()).all()
+    documents = Document.query.filter_by(
+        dog_id=dog_id
+    ).order_by(
+        Document.uploaded_at.desc()
+    ).all()
+
+    messages = DogMessage.query.filter_by(
+        dog_id=dog_id
+    ).order_by(
+        DogMessage.created_at.asc()
+    ).all()
 
     return render_template(
         "dog_detail.html",
@@ -68,7 +100,9 @@ def dog_detail(dog_id):
 @login_required
 @roles_required("admin", "coordinator", "staff")
 def add_dog():
+
     if request.method == "POST":
+
         name = request.form.get("name", "").strip()
         breed = request.form.get("breed", "").strip()
         age = request.form.get("age", "").strip()
@@ -84,6 +118,7 @@ def add_dog():
             return redirect(url_for("dogs.add_dog"))
 
         try:
+
             if image_file and image_file.filename:
                 image_url = upload_image_to_cloudinary(image_file)
 
@@ -99,12 +134,22 @@ def add_dog():
 
             db.session.add(new_dog)
             db.session.commit()
-            flash(f"{new_dog.name} was added successfully.", "success")
+
+            flash(
+                f"{new_dog.name} was added successfully.",
+                "success"
+            )
+
             return redirect(url_for("dogs.index"))
 
         except Exception as e:
             db.session.rollback()
-            flash(f"Error adding dog: {str(e)}", "error")
+
+            flash(
+                f"Error adding dog: {str(e)}",
+                "error"
+            )
+
             return redirect(url_for("dogs.add_dog"))
 
     return render_template("form.html", dog=None)
@@ -114,9 +159,11 @@ def add_dog():
 @login_required
 @roles_required("admin", "coordinator", "staff")
 def edit_dog(dog_id):
+
     dog = Dog.query.get_or_404(dog_id)
 
     if request.method == "POST":
+
         name = request.form.get("name", "").strip()
         breed = request.form.get("breed", "").strip()
         age = request.form.get("age", "").strip()
@@ -128,9 +175,12 @@ def edit_dog(dog_id):
 
         if not name:
             flash("Dog name is required.", "error")
-            return redirect(url_for("dogs.edit_dog", dog_id=dog.id))
+            return redirect(
+                url_for("dogs.edit_dog", dog_id=dog.id)
+            )
 
         try:
+
             dog.name = name
             dog.breed = breed or None
             dog.age = age or None
@@ -139,16 +189,33 @@ def edit_dog(dog_id):
             dog.status = status or "Available"
 
             if image_file and image_file.filename:
-                dog.image_url = upload_image_to_cloudinary(image_file)
+                dog.image_url = upload_image_to_cloudinary(
+                    image_file
+                )
 
             db.session.commit()
-            flash(f"{dog.name} was updated successfully.", "success")
-            return redirect(url_for("dogs.dog_detail", dog_id=dog.id))
+
+            flash(
+                f"{dog.name} was updated successfully.",
+                "success"
+            )
+
+            return redirect(
+                url_for("dogs.dog_detail", dog_id=dog.id)
+            )
 
         except Exception as e:
+
             db.session.rollback()
-            flash(f"Error updating dog: {str(e)}", "error")
-            return redirect(url_for("dogs.edit_dog", dog_id=dog.id))
+
+            flash(
+                f"Error updating dog: {str(e)}",
+                "error"
+            )
+
+            return redirect(
+                url_for("dogs.edit_dog", dog_id=dog.id)
+            )
 
     return render_template("form.html", dog=dog)
 
@@ -157,14 +224,26 @@ def edit_dog(dog_id):
 @login_required
 @roles_required("admin", "coordinator")
 def delete_dog(dog_id):
+
     dog = Dog.query.get_or_404(dog_id)
 
     try:
+
         db.session.delete(dog)
         db.session.commit()
-        flash(f"{dog.name} was deleted successfully.", "success")
+
+        flash(
+            f"{dog.name} was deleted successfully.",
+            "success"
+        )
+
     except Exception as e:
+
         db.session.rollback()
-        flash(f"Error deleting dog: {str(e)}", "error")
+
+        flash(
+            f"Error deleting dog: {str(e)}",
+            "error"
+        )
 
     return redirect(url_for("dogs.index"))
