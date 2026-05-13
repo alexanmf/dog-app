@@ -12,6 +12,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(50), nullable=False, default="staff")
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    immediate_foster = db.Column(db.Boolean, default=False, nullable=False)
 
     messages = db.relationship("DogMessage", backref="user", lazy=True)
     documents = db.relationship("Document", backref="user", lazy=True)
