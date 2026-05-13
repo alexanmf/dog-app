@@ -53,8 +53,12 @@
         <label for="size">Size</label>
         <select id="size" name="size">
           <option value="">Select size</option>
+
           {% for s in ["Small", "Medium", "Large"] %}
-            <option value="{{ s }}" {% if dog and dog.size == s %}selected{% endif %}>
+            <option
+              value="{{ s }}"
+              {% if dog and dog.size == s %}selected{% endif %}
+            >
               {{ s }}
             </option>
           {% endfor %}
@@ -76,9 +80,17 @@
 
       <div class="field">
         <label for="status">Status</label>
+
         <select id="status" name="status">
           {% for s in ["Available", "Intake", "Fostered", "Hold", "Adopted", "Transferred"] %}
-            <option value="{{ s }}" {% if dog and dog.status == s %}selected{% elif not dog and s == "Available" %}selected{% endif %}>
+            <option
+              value="{{ s }}"
+              {% if dog and dog.status == s %}
+                selected
+              {% elif not dog and s == "Available" %}
+                selected
+              {% endif %}
+            >
               {{ s }}
             </option>
           {% endfor %}
@@ -86,20 +98,43 @@
       </div>
     </div>
 
+    <!-- NEW: Immediate Foster Checkbox -->
     <div class="row full">
       <div class="field">
-        <label for="image">Dog Photo</label>
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            name="immediate_foster"
+            {% if dog and dog.immediate_foster %}checked{% endif %}
+          >
+          Needs Immediate Foster Placement
+        </label>
+
+        <p class="muted">
+          Mark this dog as urgently needing a foster home.
+        </p>
+      </div>
+    </div>
+
+    <div class="row full">
+      <div class="field">
+        <label for="image">Primary Dog Photo</label>
+
         <input
           id="image"
           type="file"
           name="image"
           accept=".png,.jpg,.jpeg,.gif,.webp"
         >
-        <p class="muted">Upload a photo file from your computer.</p>
+
+        <p class="muted">
+          Upload the main profile image for this dog.
+        </p>
       </div>
     </div>
 
     {% if dog and dog.image_url %}
+
       {% if dog.image_url.startswith('http') %}
         {% set preview_src = dog.image_url %}
       {% else %}
@@ -108,23 +143,45 @@
 
       <div class="row full">
         <div class="field">
-          <label>Current Photo</label>
+
+          <label>Current Primary Photo</label>
+
           <img
             src="{{ preview_src }}"
             alt="{{ dog.name }}"
-            style="max-height: 180px; width: auto; border-radius: 10px; border: 1px solid #ddd;"
+            style="
+              max-height: 220px;
+              width: auto;
+              border-radius: 12px;
+              border: 1px solid #ddd;
+              margin-top: 10px;
+            "
           >
+
         </div>
       </div>
+
     {% endif %}
 
-    <div>
-      <button class="btn primary" type="submit">Save</button>
+    <div class="actions">
+      <button class="btn primary" type="submit">
+        Save Dog
+      </button>
 
       {% if dog %}
-        <a class="btn" href="{{ url_for('dogs.dog_detail', dog_id=dog.id) }}">Cancel</a>
+        <a
+          class="btn"
+          href="{{ url_for('dogs.dog_detail', dog_id=dog.id) }}"
+        >
+          Cancel
+        </a>
       {% else %}
-        <a class="btn" href="{{ url_for('dogs.index') }}">Cancel</a>
+        <a
+          class="btn"
+          href="{{ url_for('dogs.index') }}"
+        >
+          Cancel
+        </a>
       {% endif %}
     </div>
 
