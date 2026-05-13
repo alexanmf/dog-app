@@ -122,7 +122,7 @@ class DogMessage(db.Model):
     message = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
-    class DogPhoto(db.Model):
+class DogPhoto(db.Model):
     __tablename__ = "dog_photos"
 
     id = db.Column(db.Integer, primary_key=True)
