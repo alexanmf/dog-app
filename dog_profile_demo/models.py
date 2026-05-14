@@ -66,6 +66,7 @@ class Dog(db.Model):
 
     breed = db.Column(db.String(100))
     age = db.Column(db.String(50))
+    gender = db.Column(db.String(20))
     size = db.Column(db.String(50))
     friendliness = db.Column(db.String(255))
 
