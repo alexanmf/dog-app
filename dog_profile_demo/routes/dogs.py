@@ -27,6 +27,7 @@ def index():
     status = request.args.get("status", "").strip()
     size = request.args.get("size", "").strip()
     breed = request.args.get("breed", "").strip()
+    gender = request.args.get("gender", "").strip()
     friendliness = request.args.get("friendliness", "").strip()
 
     query = Dog.query
@@ -36,6 +37,7 @@ def index():
             db.or_(
                 Dog.name.ilike(f"%{q}%"),
                 Dog.breed.ilike(f"%{q}%"),
+                Dog.gender.ilike(f"%{q}%"),
                 Dog.friendliness.ilike(f"%{q}%")
             )
         )
@@ -48,6 +50,9 @@ def index():
 
     if breed:
         query = query.filter(Dog.breed.ilike(f"%{breed}%"))
+
+    if gender:
+        query = query.filter(Dog.gender == gender)
 
     if friendliness:
         query = query.filter(Dog.friendliness.ilike(f"%{friendliness}%"))
@@ -134,6 +139,7 @@ def add_dog():
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         breed = request.form.get("breed", "").strip()
+        gender = request.form.get("gender", "").strip()
         age = request.form.get("age", "").strip()
         size = request.form.get("size", "").strip()
         friendliness = request.form.get("friendliness", "").strip()
@@ -154,6 +160,7 @@ def add_dog():
             new_dog = Dog(
                 name=name,
                 breed=breed or None,
+                gender=gender or None,
                 age=age or None,
                 size=size or None,
                 friendliness=friendliness or None,
@@ -185,6 +192,7 @@ def edit_dog(dog_id):
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         breed = request.form.get("breed", "").strip()
+        gender = request.form.get("gender", "").strip()
         age = request.form.get("age", "").strip()
         size = request.form.get("size", "").strip()
         friendliness = request.form.get("friendliness", "").strip()
@@ -200,6 +208,7 @@ def edit_dog(dog_id):
         try:
             dog.name = name
             dog.breed = breed or None
+            dog.gender = gender or None
             dog.age = age or None
             dog.size = size or None
             dog.friendliness = friendliness or None
