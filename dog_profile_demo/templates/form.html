@@ -36,7 +36,14 @@
         >
       </div>
     </div>
-
+<div class="field">
+  <label for="gender">Gender</label>
+  <select id="gender" name="gender">
+    <option value="">Select gender</option>
+    <option value="Female" {% if dog and dog.gender == "Female" %}selected{% endif %}>Female</option>
+    <option value="Male" {% if dog and dog.gender == "Male" %}selected{% endif %}>Male</option>
+  </select>
+</div>
     <div class="row">
       <div class="field">
         <label for="age">Age</label>
