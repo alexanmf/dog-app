@@ -3,8 +3,14 @@
 
 <div class="top-bar">
   <div>
-    <h2>Dogs</h2>
-    <div class="dashboard-grid">
+    <h2>{{ 'Dogs Needing Foster' if foster_view else 'Dogs' }}</h2>
+    <p class="muted">
+      {{ 'These dogs have been marked as needing immediate foster placement.' if foster_view else 'Manage dog profiles, records, and status updates.' }}
+    </p>
+  </div>
+</div>
+
+<div class="dashboard-grid">
 
   <div class="dashboard-card">
     <h3>Total Dogs</h3>
@@ -21,83 +27,103 @@
     <p>{{ adopted_dogs }}</p>
   </div>
 
-</div>
-    <p class="muted">Manage dog profiles, records, and status updates.</p>
+  <div class="dashboard-card">
+    <h3>Needs Foster</h3>
+    <p>{{ foster_needed_dogs }}</p>
   </div>
 
-  {% if session.get("role") in ["admin", "coordinator", "staff"] %}
-    <a href="{{ url_for('dogs.add_dog') }}" class="btn primary">Add Dog</a>
-  {% endif %}
 </div>
 
-<div class="card">
-  <form method="GET" action="{{ url_for('dogs.index') }}" class="filters">
+{% if not foster_view %}
+  <div class="card">
+    <form method="GET" action="{{ url_for('dogs.index') }}" class="filters">
 
-    <div class="field">
-      <label for="q">Search</label>
-      <input
-        type="text"
-        id="q"
-        name="q"
-        placeholder="Search name, breed, or friendliness..."
-        value="{{ request.args.get('q', '') }}"
-      >
-    </div>
+      <div class="field">
+        <label for="q">Search</label>
+        <input
+          type="text"
+          id="q"
+          name="q"
+          placeholder="Search name, breed, gender, or friendliness..."
+          value="{{ request.args.get('q', '') }}"
+        >
+      </div>
 
-    <div class="field">
-      <label for="status">Status</label>
-      <select name="status" id="status">
-        <option value="">Any status</option>
-        {% for s in ["Available", "Intake", "Fostered", "Hold", "Adopted", "Transferred"] %}
-          <option value="{{ s }}" {% if request.args.get('status') == s %}selected{% endif %}>
-            {{ s }}
+      <div class="field">
+        <label for="status">Status</label>
+        <select name="status" id="status">
+          <option value="">Any status</option>
+          {% for s in ["Available", "Intake", "Fostered", "Hold", "Adopted", "Transferred"] %}
+            <option value="{{ s }}" {% if request.args.get('status') == s %}selected{% endif %}>
+              {{ s }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="size">Size</label>
+        <select name="size" id="size">
+          <option value="">Any size</option>
+          {% for s in ["Small", "Medium", "Large"] %}
+            <option value="{{ s }}" {% if request.args.get('size') == s %}selected{% endif %}>
+              {{ s }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="gender">Gender</label>
+        <select name="gender" id="gender">
+          <option value="">Any gender</option>
+          <option value="Female" {% if request.args.get('gender') == "Female" %}selected{% endif %}>
+            Female
           </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="field">
-      <label for="size">Size</label>
-      <select name="size" id="size">
-        <option value="">Any size</option>
-        {% for s in ["Small", "Medium", "Large"] %}
-          <option value="{{ s }}" {% if request.args.get('size') == s %}selected{% endif %}>
-            {{ s }}
+          <option value="Male" {% if request.args.get('gender') == "Male" %}selected{% endif %}>
+            Male
           </option>
-        {% endfor %}
-      </select>
-    </div>
+        </select>
+      </div>
 
-    <div class="field">
-      <label for="breed">Breed</label>
-      <input
-        type="text"
-        id="breed"
-        name="breed"
-        placeholder="Breed contains..."
-        value="{{ request.args.get('breed', '') }}"
-      >
-    </div>
+      <div class="field">
+        <label for="breed">Breed</label>
+        <input
+          type="text"
+          id="breed"
+          name="breed"
+          placeholder="Breed contains..."
+          value="{{ request.args.get('breed', '') }}"
+        >
+      </div>
 
-    <div class="field">
-      <label for="friendliness">Friendliness</label>
-      <input
-        type="text"
-        id="friendliness"
-        name="friendliness"
-        placeholder="kids, cats, dogs, shy..."
-        value="{{ request.args.get('friendliness', '') }}"
-      >
-    </div>
+      <div class="field">
+        <label for="friendliness">Friendliness</label>
+        <input
+          type="text"
+          id="friendliness"
+          name="friendliness"
+          placeholder="kids, cats, dogs, shy..."
+          value="{{ request.args.get('friendliness', '') }}"
+        >
+      </div>
 
-    <div class="field">
-      <label>&nbsp;</label>
-      <button class="btn primary" type="submit">Apply Filters</button>
-      <a class="btn" href="{{ url_for('dogs.index') }}">Clear</a>
-    </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <button class="btn primary" type="submit">Apply Filters</button>
+        <a class="btn" href="{{ url_for('dogs.index') }}">Clear</a>
+      </div>
 
-  </form>
-</div>
+    </form>
+  </div>
+{% else %}
+  <div class="card">
+    <p class="muted">
+      Showing only dogs marked as needing immediate foster placement.
+    </p>
+    <a class="btn" href="{{ url_for('dogs.index') }}">View All Dogs</a>
+  </div>
+{% endif %}
 
 {% if dogs %}
   <p class="muted">
@@ -111,10 +137,12 @@
           <th>Photo</th>
           <th>Name</th>
           <th>Breed</th>
+          <th>Gender</th>
           <th>Age</th>
           <th>Size</th>
           <th>Friendliness</th>
           <th>Status</th>
+          <th>Foster Need</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -151,6 +179,7 @@
             </td>
 
             <td>{{ dog.breed or "N/A" }}</td>
+            <td>{{ dog.gender or "N/A" }}</td>
             <td>{{ dog.age or "N/A" }}</td>
             <td>{{ dog.size or "N/A" }}</td>
 
@@ -177,6 +206,14 @@
               <span class="badge {{ status_class }}">
                 {{ dog.status or "N/A" }}
               </span>
+            </td>
+
+            <td>
+              {% if dog.immediate_foster %}
+                <span class="badge medical">Needs Foster</span>
+              {% else %}
+                <span class="muted">—</span>
+              {% endif %}
             </td>
 
             <td class="actions">
@@ -210,8 +247,13 @@
 
 {% else %}
   <div class="card">
-    <p>No dogs match your filters.</p>
-    <a class="btn" href="{{ url_for('dogs.index') }}">Clear Filters</a>
+    {% if foster_view %}
+      <p>No dogs are currently marked as needing immediate foster placement.</p>
+      <a class="btn" href="{{ url_for('dogs.index') }}">View All Dogs</a>
+    {% else %}
+      <p>No dogs match your filters.</p>
+      <a class="btn" href="{{ url_for('dogs.index') }}">Clear Filters</a>
+    {% endif %}
   </div>
 {% endif %}
 
